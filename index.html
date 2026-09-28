@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hero Hub Ventures Incorporated (HHVI) - System Gateway</title>
@@ -8,6 +9,47 @@
     <!-- External Dependencies -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
+        // 1. Initialize Supabase Client
+const SUPABASE_URL = 'https://YOUR_PROJECT_REF.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxmcXdnaGRyaXJxY2J6a3VmZHJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MDgwNDQsImV4cCI6MjEwNjE4NDA0NH0.fF-dqbanaH_uHqHPlMDEiyfJj2qLFEg5TTW0mv4m9wc';
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// 2. Example: Save an Order directly from GitHub Pages
+async function createOrder(orderData) {
+  const { data, error } = await supabase
+    .from('hhvi_orders')
+    .insert([
+      {
+        prefix: orderData.prefix,
+        ref_number: orderData.refNumber,
+        payee_name: orderData.payeeName,
+        order_date: orderData.orderDate,
+        delivered_date: orderData.deliveredDate
+      }
+    ]);
+
+  if (error) {
+    console.error('Error saving order:', error.message);
+    alert('Failed to create order: ' + error.message);
+  } else {
+    console.log('Order created successfully:', data);
+    alert('Order saved!');
+  }
+}
+
+// 3. Example: Fetch all orders to display in UI
+async function loadOrders() {
+  const { data: orders, error } = await supabase
+    .from('hhvi_orders')
+    .select('*');
+
+  if (error) {
+    console.error('Error fetching orders:', error.message);
+  } else {
+    console.log('Fetched Orders:', orders);
+    // Render orders into your table/UI here
+  }
+}
         tailwind.config = {
             darkMode: 'class'
         }
