@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hero Hub Ventures Incorporated (HHVI) - System Gateway</title>
     
-    <!-- Dependencies -->
+    <!-- External Dependencies -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -633,24 +633,23 @@
 
     <!-- APPLICATION LOGIC -->
     <script>
-        // Crypto Utility for SHA-256 Hashing (Hides raw passwords from inspect element)
+        // SHA-256 password hashing to avoid plain-text password inspection in DevTools
         async function hashPassword(password) {
-            const msgUint8 = new TextEncoder().encode(password);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+            const encoder = new TextEncoder();
+            const data = encoder.encode(password);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
             const hashArray = Array.from(new Uint8Array(hashBuffer));
             return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
         }
 
-        let globalSeqCounter = parseInt(localStorage.getItem('hhvi_seq'), 10) || 1;
-
-        // Default SHA-256 hashes:
-        // admin123 -> 8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918
-        // user123  -> e606e38b0d8c19b24cf0ee3808183162ea7cd63ff7912dbb22b5e803286b4446
-        let users = JSON.parse(localStorage.getItem('hhvi_users')) || [
-            { id: 1, username: 'admin', passHash: '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', role: 'Admin' },
-            { id: 2, username: 'accountholder', passHash: 'e606e38b0d8c19b24cf0ee3808183162ea7cd63ff7912dbb22b5e803286b4446', role: 'Account Holder' }
+        // Initialize default hashed users if no accounts exist
+        const DEFAULT_USERS = [
+            { id: 1, username: 'admin', hash: '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', role: 'Admin' }, // admin123
+            { id: 2, username: 'accountholder', hash: '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8', role: 'Account Holder' } // user123
         ];
 
+        let globalSeqCounter = parseInt(localStorage.getItem('hhvi_seq'), 10) || 1;
+        let users = JSON.parse(localStorage.getItem('hhvi_users')) || DEFAULT_USERS;
         let orders = JSON.parse(localStorage.getItem('hhvi_orders')) || [];
         let proofs = JSON.parse(localStorage.getItem('hhvi_proofs')) || [];
         let storedSignatures = JSON.parse(localStorage.getItem('hhvi_signatures')) || {
@@ -679,23 +678,25 @@
             const pInput = document.getElementById('loginPassword').value.trim();
 
             if (!uInput || !pInput) {
-                alert('Please provide both username and password.');
+                alert('Please enter both username and password.');
                 return;
             }
 
             const inputHash = await hashPassword(pInput);
 
-            // STRICT AUTHENTICATION CHECK: Only existing users with exact hashed password match
-            const foundUser = users.find(
-                u => u.username.toLowerCase() === uInput.toLowerCase() && (u.passHash === inputHash || u.pass === pInput)
+            // Strict user validation check against registered users
+            const foundUser = users.find(u => 
+                u.username.toLowerCase() === uInput.toLowerCase() && 
+                (u.hash ? u.hash === inputHash : u.pass === pInput)
             );
 
             if (foundUser) {
                 currentUser = { username: foundUser.username, role: foundUser.role };
                 document.getElementById('loginModal').classList.add('hidden');
+                document.getElementById('loginPassword').value = '';
                 renderHeaderUser();
             } else {
-                alert('Access Denied: Invalid Username or Password. Only authorized user accounts can log in.');
+                alert('Invalid Username or Password. Access Denied.');
                 document.getElementById('loginPassword').value = '';
             }
         }
@@ -804,12 +805,12 @@
             const newPass = document.getElementById('resetMyPassInput').value.trim();
             if (!newPass) return alert('Please enter a new password.');
 
-            const newHash = await hashPassword(newPass);
+            const hashedPass = await hashPassword(newPass);
 
             const uIndex = users.findIndex(u => u.username.toLowerCase() === currentUser.username.toLowerCase());
             if (uIndex !== -1) {
-                users[uIndex].passHash = newHash;
-                delete users[uIndex].pass; // Ensure unhashed pass is cleared
+                users[uIndex].hash = hashedPass;
+                delete users[uIndex].pass;
                 localStorage.setItem('hhvi_users', JSON.stringify(users));
                 document.getElementById('resetMyPassInput').value = '';
                 renderUserList();
@@ -825,17 +826,12 @@
 
             if (!newUsername || !newPassword) return;
 
-            // Check if username already exists
-            if (users.some(u => u.username.toLowerCase() === newUsername.toLowerCase())) {
-                return alert('Account creation failed: Username already exists.');
-            }
-
-            const passHash = await hashPassword(newPassword);
+            const hashedPass = await hashPassword(newPassword);
 
             users.push({
                 id: Date.now(),
                 username: newUsername,
-                passHash: passHash,
+                hash: hashedPass,
                 role: selectedRole
             });
 
@@ -1084,7 +1080,7 @@
             localStorage.setItem('hhvi_orders', JSON.stringify(orders));
             
             resetOrderForm();
-            alert("Congratulation and generated number is succesfull save.");
+            alert("Order created successfully!");
         }
 
         function resetOrderForm() {
@@ -1708,7 +1704,7 @@
                 <div class="flex justify-between items-center bg-black p-2.5 rounded-lg text-xs border border-zinc-800">
                     <div class="flex flex-col">
                         <span class="text-white font-bold">${u.username} <span class="text-amber-400 font-mono text-[10px]">(${u.role})</span></span>
-                        <span class="text-zinc-400 font-mono text-[10px] flex items-center gap-1"><i class="fa-solid fa-shield text-[9px] text-emerald-400"></i> Account Status: <strong class="text-emerald-400">Encrypted / Active</strong></span>
+                        <span class="text-zinc-500 font-mono text-[10px] flex items-center gap-1"><i class="fa-solid fa-shield-halved text-[9px] text-emerald-400"></i> Encrypted Credential</span>
                     </div>
                     ${u.username !== 'admin' ? `<button type="button" onclick="users.splice(${idx},1); localStorage.setItem('hhvi_users', JSON.stringify(users)); renderUserList();" class="text-rose-500 hover:text-rose-400 font-bold p-1"><i class="fa-solid fa-trash text-xs"></i></button>` : ''}
                 </div>
