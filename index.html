@@ -660,6 +660,26 @@
             loadStoredSignaturesUI();
         };
 
+        function handleLoginDirect(event) {
+            event.preventDefault();
+            const uInput = document.getElementById('loginUsername').value.trim();
+            const pInput = document.getElementById('loginPassword').value.trim();
+
+            // Find matching user in the local storage users array
+            const foundUser = users.find(
+                u => u.username.toLowerCase() === uInput.toLowerCase() && u.pass === pInput
+            );
+
+            if (foundUser) {
+                currentUser = { username: foundUser.username, role: foundUser.role };
+                document.getElementById('loginModal').classList.add('hidden');
+                renderHeaderUser();
+            } else {
+                alert('Invalid Username or Password. Access Denied.');
+                document.getElementById('loginPassword').value = '';
+            }
+        }
+
         function toggleTheme() {
             currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
             localStorage.setItem('hhvi_theme', currentTheme);
@@ -753,40 +773,6 @@
                 header.innerHTML = `<span class="text-zinc-500">Not Logged In</span>`;
             }
             applyRoleRestrictions();
-        }
-
-        async function handleLoginDirect(event) {
-            event.preventDefault();
-            const uInput = document.getElementById('loginUsername').value.trim();
-            const pInput = document.getElementById('loginPassword').value.trim();
-
-            try {
-                const response = await fetch('/api/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: uInput, password: pInput })
-                });
-
-                const result = await response.json();
-
-                if (response.ok && result.success) {
-                    currentUser = result.user;
-                    document.getElementById('loginModal').classList.add('hidden');
-                    renderHeaderUser();
-                } else {
-                    alert(result.message || 'Access Denied');
-                    document.getElementById('loginPassword').value = '';
-                }
-            } catch (err) {
-                const found = users.find(u => u.username.toLowerCase() === uInput.toLowerCase() && u.pass === pInput);
-                if (found) {
-                    currentUser = { username: found.username, role: found.role };
-                } else {
-                    currentUser = { username: uInput, role: 'Admin' };
-                }
-                document.getElementById('loginModal').classList.add('hidden');
-                renderHeaderUser();
-            }
         }
 
         function handleForgotPassword() {
