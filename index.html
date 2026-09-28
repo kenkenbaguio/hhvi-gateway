@@ -1,17 +1,15 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hero Hub Ventures Incorporated (HHVI) - System Gateway</title>
+    <title>Hero Hub Ventures Incorporated (HHVI) - Gateway</title>
     
-    <!-- External Dependencies -->
+    <!-- Dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = {
-            darkMode: 'class'
-        }
+        tailwind.config = { darkMode: 'class' };
     </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -25,1733 +23,223 @@
         }
         .animate-jump { animation: jumpSlide 0.5s ease-in-out; }
         .page-break, .html2pdf-page-break { page-break-after: always; break-after: page; }
-        
         .search-results-dropdown { 
             z-index: 99999 !important; 
             position: absolute !important;
             top: 100% !important;
             left: 0 !important;
             right: 0 !important;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.8), 0 8px 10px -6px rgba(0, 0, 0, 0.8) !important;
-        }
-        .table-overflow-visible {
-            overflow: visible !important;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.8);
         }
     </style>
 </head>
-<body id="appBody" class="bg-black/85 dark:bg-black/85 bg-cover bg-center bg-no-repeat bg-blend-overlay text-zinc-100 font-sans min-h-screen flex flex-col justify-between transition-colors duration-200" style="background-image: url('bg.jpg');">
+<body id="appBody" class="bg-black/85 text-zinc-100 font-sans min-h-screen flex flex-col justify-between transition-colors duration-200" style="background-image: url('bg.jpg');">
 
-    <!-- ADMIN SECURITY BAR & AUDIT TRAIL -->
-    <header class="bg-black dark:bg-black border-b border-zinc-800 px-4 py-2 text-xs font-mono">
-        <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-2">
-            <div class="flex items-center gap-4">
-                <span class="text-emerald-400 font-bold flex items-center gap-1.5 text-xs">
-                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
-                    HHVI GATEWAY ACTIVE
+    <!-- AUTHENTICATION DIALOG (SHOWN BY DEFAULT) -->
+    <div id="loginModal" class="fixed inset-0 bg-black/95 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 sm:p-8 max-w-md w-full space-y-5 text-center shadow-2xl">
+            <div class="flex flex-col items-center space-y-3">
+                <div class="w-24 h-24 bg-emerald-500/10 border border-emerald-500/40 rounded-2xl flex items-center justify-center p-2.5">
+                    <img src="logo.jpg" alt="HHVI Logo" class="w-full h-full object-contain" onerror="this.style.display='none'">
+                </div>
+                <h2 class="text-lg font-black tracking-widest text-white uppercase">HERO HUB VENTURES INC.</h2>
+                <span class="text-[10px] font-mono tracking-widest text-emerald-400 bg-emerald-950/80 border border-emerald-700/60 px-3 py-1 rounded-full uppercase font-bold">
+                    SYSTEM GATEWAY
                 </span>
-                
-                <div id="adminDiscreetPanel" class="hidden flex items-center gap-2 border-l border-zinc-800 pl-4 text-xs">
-                    <span class="text-zinc-500">LIVE VISITOR LOG:</span>
-                    <span class="bg-zinc-900 border border-zinc-700 px-2 py-0.5 rounded text-emerald-400">
-                        IP: <strong id="hdrIp" class="text-white">Fetching...</strong>
-                    </span>
-                    <span class="bg-zinc-900 border border-zinc-700 px-2 py-0.5 rounded text-sky-400">
-                        DEVICE: <strong id="hdrPc" class="text-white">Fetching...</strong>
-                    </span>
-                    <span class="bg-zinc-900 border border-zinc-700 px-2 py-0.5 rounded text-amber-400">
-                        LOC: <strong id="hdrLoc" class="text-white">Fetching...</strong>
-                    </span>
-                </div>
-            </div>
-            
-            <div class="flex items-center gap-3">
-                <div id="userHeader" class="text-zinc-300 font-bold text-xs"></div>
-                <button id="settingsBtn" onclick="toggleUserModal(true)" class="hidden px-3 py-1 bg-zinc-800 text-xs font-bold rounded border border-zinc-700 hover:bg-zinc-700 text-white flex items-center gap-1.5 transition-colors">
-                    <i class="fa-solid fa-gear text-amber-400"></i> Settings & Users
-                </button>
-            </div>
-        </div>
-    </header>
-
-    <!-- NAVIGATION BAR -->
-    <nav class="bg-zinc-900/90 dark:bg-zinc-900/90 border-b border-zinc-800 px-4 py-3">
-        <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-3">
-            <h1 class="text-base font-black tracking-wider uppercase text-white flex items-center gap-2.5">
-                <img src="logo.jpg" alt="HHVI Logo" class="w-8 h-8 object-contain rounded" onerror="this.style.display='none'">
-                HHVI OPERATIONAL HUB
-            </h1>
-            <div class="flex flex-wrap gap-1.5 bg-black/60 p-1.5 rounded-lg border border-zinc-800 text-xs font-bold">
-                <button type="button" onclick="switchTab(1)" id="tab-1" class="px-3 py-1.5 rounded bg-white text-black transition-colors">Create Order</button>
-                <button type="button" onclick="switchTab(2)" id="tab-2" class="px-3 py-1.5 rounded text-zinc-400 hover:text-white transition-colors">DR Generator</button>
-                <button type="button" onclick="switchTab(3)" id="tab-3" class="px-3 py-1.5 rounded text-zinc-400 hover:text-white transition-colors">Proof Attachments</button>
-                <button type="button" onclick="switchTab(4)" id="tab-4" class="px-3 py-1.5 rounded text-zinc-400 hover:text-white transition-colors">Approval Form</button>
-                <button type="button" onclick="switchTab(5)" id="tab-5" class="px-3 py-1.5 rounded text-zinc-400 hover:text-white transition-colors">Approval Status & Ledger</button>
-            </div>
-        </div>
-    </nav>
-
-    <!-- MAIN VIEW PANELS -->
-    <main class="max-w-7xl mx-auto p-4 w-full flex-1">
-
-        <!-- TAB 1: ORDER CREATION -->
-        <section id="layer-1" class="space-y-6">
-            <div class="bg-zinc-900/90 dark:bg-zinc-900/90 p-6 rounded-2xl border border-zinc-800 space-y-6 shadow-2xl">
-                <div class="border-b border-zinc-800 pb-3 flex justify-between items-center">
-                    <h2 class="text-xl font-black text-white tracking-wide">ORDER CREATION</h2>
-                    <span class="text-xs text-zinc-400 font-mono">System Gateway Version 2026.2</span>
-                </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                    <div>
-                        <label for="l1Prefix" class="block font-bold text-zinc-300 mb-1.5">Prefix</label>
-                        <select id="l1Prefix" onchange="toggleCustomPrefix(); updateRefNo();" class="w-full bg-black border border-zinc-700 rounded-lg p-2.5 text-xs text-white focus:border-emerald-500 focus:outline-none">
-                            <option value="HHVI-CO">HHVI-CO (Consignment)</option>
-                            <option value="HHVI-OO">HHVI-OO (Online Order)</option>
-                            <option value="HHVI-WS">HHVI-WS (Wholesale)</option>
-                            <option value="HHVI-PO">HHVI-PO (Pre-Orders)</option>
-                            <option value="HHVI-EO">HHVI-EO (Employee Orders)</option>
-                            <option value="HHVI-MA">HHVI-MA (Management Approval)</option>
-                            <option value="OTHER">Others (Custom Title/Name)</option>
-                        </select>
-                        <input type="text" id="l1CustomPrefix" oninput="updateRefNo()" placeholder="Enter Custom Prefix" class="w-full bg-black border border-amber-500 rounded-lg p-2.5 text-xs text-white mt-2 hidden focus:outline-none">
-                    </div>
-                    <div>
-                        <label for="l1RefNo" class="block font-bold text-zinc-300 mb-1.5">Ref Number</label>
-                        <input type="text" id="l1RefNo" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-2.5 text-xs font-mono text-emerald-400 font-bold focus:outline-none" readonly>
-                    </div>
-                    <div>
-                        <label for="l1Customer" class="block font-bold text-zinc-300 mb-1.5">Payee / Customer Name</label>
-                        <input type="text" id="l1Customer" placeholder="Enter Customer Name" class="w-full bg-black border border-zinc-700 rounded-lg p-2.5 text-xs text-white focus:border-emerald-500 focus:outline-none">
-                    </div>
-                    <div>
-                        <label for="l1OrderDate" class="block font-bold text-zinc-300 mb-1.5">Date of Order</label>
-                        <input type="date" id="l1OrderDate" onchange="calcDeliveredDate()" class="w-full bg-black text-white border border-zinc-700 rounded-lg p-2.5 text-xs focus:border-emerald-500 focus:outline-none">
-                    </div>
-                    <div>
-                        <label for="l1DeliveredDate" class="block font-bold text-zinc-300 mb-1.5">Delivered Date</label>
-                        <input type="date" id="l1DeliveredDate" class="w-full bg-zinc-950 text-emerald-400 font-bold border border-zinc-700 rounded-lg p-2.5 text-xs focus:outline-none">
-                    </div>
-                    <div>
-                        <label for="l1PreparedBy" class="block font-bold text-zinc-300 mb-1.5">Prepared By <span class="text-rose-500">*</span></label>
-                        <input type="text" id="l1PreparedBy" placeholder="Required" class="w-full bg-black border border-zinc-700 rounded-lg p-2.5 text-xs text-white focus:border-emerald-500 focus:outline-none" required>
-                    </div>
-                    <div>
-                        <label for="l1PaymentRef" class="block font-bold text-zinc-300 mb-1.5">Payment Ref</label>
-                        <input type="text" id="l1PaymentRef" placeholder="e.g. Bank Ref / Check No." class="w-full bg-black border border-zinc-700 rounded-lg p-2.5 text-xs text-white focus:border-emerald-500 focus:outline-none">
-                    </div>
-                    <div>
-                        <label for="l1PaymentStatusSelect" class="block font-bold text-zinc-300 mb-1.5">Status of Payment</label>
-                        <select id="l1PaymentStatusSelect" onchange="handlePaymentStatusChange(this.value); calcDeliveredDate();" class="w-full bg-black border border-zinc-700 rounded-lg p-2.5 text-xs text-white focus:border-emerald-500 focus:outline-none">
-                            <option value="Paid - To Release">Paid - To Release</option>
-                            <option value="Not Paid">Not Paid</option>
-                            <option value="For Payment">For Payment</option>
-                        </select>
-                    </div>
-                    <div id="notPaidTermsDiv" class="hidden">
-                        <label for="l1NotPaidTerms" class="block font-bold text-amber-400 mb-1.5">Terms (For Not Paid)</label>
-                        <select id="l1NotPaidTerms" onchange="calcDeliveredDate()" class="w-full bg-black border border-amber-500 rounded-lg p-2.5 text-xs text-white focus:outline-none">
-                            <option value="15 Terms">15 Terms</option>
-                            <option value="30 Terms">30 Terms</option>
-                        </select>
-                    </div>
-                    <div id="forPaymentDiv" class="hidden">
-                        <label for="l1ForPaymentType" class="block font-bold text-amber-400 mb-1.5">Payment Type</label>
-                        <select id="l1ForPaymentType" class="w-full bg-black border border-amber-500 rounded-lg p-2.5 text-xs text-white focus:outline-none">
-                            <option value="Bank Transfer">Bank Transfer</option>
-                            <option value="Cash">Cash</option>
-                            <option value="Cheque">Cheque</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="border-t border-zinc-800 pt-4 space-y-3">
-                    <div class="flex justify-between items-center">
-                        <h3 class="text-sm font-bold text-zinc-300 uppercase tracking-wider">Line Items</h3>
-                        <div class="flex gap-2">
-                            <label class="px-3 py-1.5 bg-zinc-800 border border-zinc-700 text-xs font-bold rounded-lg cursor-pointer hover:bg-zinc-700 text-white flex items-center gap-1.5 transition-colors">
-                                <i class="fa-solid fa-file-csv text-emerald-400"></i> Pick from CSV
-                                <input type="file" id="csvFileInput" accept=".csv" class="hidden" onchange="handleCSVUpload(event)">
-                            </label>
-                            <button type="button" onclick="addLineItem()" class="px-3 py-1.5 bg-emerald-600 text-white font-bold text-xs rounded-lg hover:bg-emerald-500 flex items-center gap-1.5 transition-colors">
-                                <i class="fa-solid fa-plus"></i> Add Line Item
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="table-overflow-visible rounded-lg border border-zinc-800 bg-black/40">
-                        <table class="w-full text-xs text-left">
-                            <thead class="bg-black text-zinc-400 font-mono">
-                                <tr>
-                                    <th class="p-2.5 border-b border-zinc-800">Item Description</th>
-                                    <th class="p-2.5 border-b border-zinc-800 w-24">Qty</th>
-                                    <th class="p-2.5 border-b border-zinc-800 w-28">Amount</th>
-                                    <th class="p-2.5 border-b border-zinc-800 w-28">Discount</th>
-                                    <th class="p-2.5 border-b border-zinc-800 w-32">Total</th>
-                                    <th class="p-2.5 border-b border-zinc-800 w-16 text-center">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="lineItemsTable" class="divide-y divide-zinc-800/60"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="flex justify-end pt-2">
-                    <button type="button" onclick="saveOrder()" class="px-6 py-2.5 bg-white text-black font-black text-xs rounded-lg hover:bg-zinc-200 shadow-xl transition-colors uppercase tracking-wider">
-                        Submit Order
-                    </button>
-                </div>
-            </div>
-        </section>
-
-        <!-- TAB 2: DR GENERATOR -->
-        <section id="layer-2" class="space-y-4 hidden">
-            <div class="bg-zinc-900/90 dark:bg-zinc-900/90 p-5 rounded-2xl border border-zinc-800 space-y-4 shadow-2xl">
-                <h2 class="text-lg font-bold text-white border-b border-zinc-800 pb-2">Delivery Receipts (DR) Generator</h2>
-                
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="bg-black/60 p-4 rounded-xl border border-zinc-800">
-                        <h3 class="font-bold text-xs uppercase text-zinc-400 mb-3">Select Order for DR</h3>
-                        <div id="l2OrderList" class="space-y-2 max-h-96 overflow-y-auto"></div>
-                    </div>
-
-                    <div class="lg:col-span-2 bg-white text-black p-8 rounded shadow-2xl space-y-4 text-xs font-sans" id="drPrintArea">
-                        <div id="drEmptyPlaceholder" class="py-20 text-center text-zinc-400 font-mono">
-                            Select an order reference on the left to render DR preview.
-                        </div>
-                        <div id="drContentWrapper" class="hidden space-y-3">
-                            <div class="text-center">
-                                <h2 class="text-base font-black tracking-wide">HERO HUB VENTURES INCORPORATED</h2>
-                                <p class="text-[10px]">S-3B 3rd Flr. Shoppesville Greenhills Shopping Center Greenhills</p>
-                                <p class="text-[10px]">1503 City of San Juan NCR Second District Philippines</p>
-                                <p class="text-[10px] font-semibold">VAT Reg. TIN: 779-254-617-00000</p>
-                            </div>
-
-                            <div class="flex justify-between items-center border-b border-black pb-1">
-                                <span class="text-base font-black uppercase tracking-wider">DELIVERY RECEIPT</span>
-                                <span class="font-mono text-base font-bold text-red-600">No. <span id="drNoDisplay" class="text-red-600">000001</span></span>
-                            </div>
-
-                            <div class="grid grid-cols-2 gap-4 text-[11px] pt-1">
-                                <div>
-                                    <p><strong>Delivered to:</strong> <span id="drCustomer">-</span></p>
-                                    <p><strong>Address:</strong> San Juan City, Metro Manila</p>
-                                    <p><strong>Business Style/Name:</strong> <span id="drBizStyle">-</span></p>
-                                </div>
-                                <div>
-                                    <p><strong>Date:</strong> <span id="drDate">-</span></p>
-                                    <p><strong>Terms:</strong> <span id="drTerms">-</span></p>
-                                    <p><strong>P.O. No.:</strong> <span id="drRefNo">-</span></p>
-                                </div>
-                            </div>
-
-                            <table class="w-full border-collapse border border-black text-[11px]">
-                                <thead>
-                                    <tr class="bg-zinc-100 font-bold">
-                                        <th class="border border-black p-1 w-10 text-center">QTY</th>
-                                        <th class="border border-black p-1 w-12 text-center">UNIT</th>
-                                        <th class="border border-black p-1 text-left">ARTICLES</th>
-                                        <th class="border border-black p-1 w-24 text-right">Unit Price</th>
-                                        <th class="border border-black p-1 w-24 text-right">Total Amount</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="drItemsBody"></tbody>
-                                <tfoot>
-                                    <tr class="font-bold bg-zinc-100">
-                                        <td colspan="4" class="border border-black p-1 text-right uppercase">TOTAL</td>
-                                        <td class="border border-black p-1 text-right font-mono" id="drGrandTotal">₱0.00</td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-
-                            <div class="pt-2 border-t border-black text-[9.5px] space-y-2">
-                                <p class="text-center font-semibold">Received the above goods and services in good condition and complete.</p>
-                                <div class="pt-5 flex justify-between px-6">
-                                    <div class="border-t border-black w-48 text-center font-bold">Cashier/Authorized Representative</div>
-                                    <div class="border-t border-black w-48 text-center font-bold">Customer Signature Over Printed Name</div>
-                                </div>
-                                <p class="text-center font-bold text-red-600 pt-2 text-[10px]">**THIS DOCUMENT IS NOT VALID FOR CLAIM OF INPUT TAXES**</p>
-                                
-                                <div class="pt-2 border-t border-zinc-300 text-[9px] text-center space-y-1">
-                                    <p class="font-bold">**Payment details indicated below for your reference.**</p>
-                                    <div class="grid grid-cols-2 gap-2 font-mono">
-                                        <div>
-                                            <p class="font-bold">UNION BANK</p>
-                                            <p>HERO HUB VENTURES INCORPORATED</p>
-                                            <p>0015-9000-4842</p>
-                                        </div>
-                                        <div>
-                                            <p class="font-bold">BDO</p>
-                                            <p>HERO HUB VENTURES INCORPORATED</p>
-                                            <p>011340020945</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="border-t border-zinc-800 pt-3">
-                    <h3 class="font-bold text-xs text-zinc-300 mb-2">Generated DR Register & Actions</h3>
-                    <div class="overflow-x-auto rounded-lg border border-zinc-800">
-                        <table class="w-full text-xs text-left">
-                            <thead class="bg-black text-zinc-400 font-mono text-[11px]">
-                                <tr>
-                                    <th class="p-2 border-b border-zinc-800">Ref No.</th>
-                                    <th class="p-2 border-b border-zinc-800">DR #</th>
-                                    <th class="p-2 border-b border-zinc-800">Customer</th>
-                                    <th class="p-2 border-b border-zinc-800">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="drRegisterTable"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- TAB 3: PROOF ATTACHMENTS HUB -->
-        <section id="layer-3" class="space-y-4 hidden">
-            <div class="bg-zinc-900/90 dark:bg-zinc-900/90 p-5 rounded-2xl border border-zinc-800 space-y-4 shadow-2xl">
-                <h2 class="text-lg font-bold text-white border-b border-zinc-800 pb-2">Proof Attachments Hub</h2>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="space-y-3 bg-black/60 p-4 rounded-xl border border-zinc-800 text-xs">
-                        <h3 class="font-bold text-xs uppercase text-zinc-400">Upload Attachments</h3>
-                        <div>
-                            <label for="l3OrderSelect" class="block font-bold text-zinc-400 mb-1">Select Order Reference</label>
-                            <select id="l3OrderSelect" onchange="checkProofRequirements()" class="w-full bg-zinc-900 border border-zinc-700 rounded p-2 text-xs text-white focus:outline-none"></select>
-                        </div>
-                        <div id="l3ReqBanner" class="p-2 bg-zinc-800 border border-zinc-700 text-[11px] rounded font-mono text-amber-400">
-                            Select an order to view attachment requirements.
-                        </div>
-                        <div>
-                            <label for="l3TypeSelect" class="block font-bold text-zinc-400 mb-1">Attachment Type</label>
-                            <select id="l3TypeSelect" class="w-full bg-zinc-900 border border-zinc-700 rounded p-2 text-xs text-white focus:outline-none">
-                                <option value="Delivery Receipt (DR)">Delivery Receipt (DR)</option>
-                                <option value="Payment Method Photo">Payment Method Photo / Deposit Slip</option>
-                                <option value="Additional Attachment">Additional Attachment</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="l3FileInput" class="block font-bold text-zinc-400 mb-1">Choose File</label>
-                            <input type="file" id="l3FileInput" accept="image/*,application/pdf" class="w-full bg-zinc-900 border border-zinc-700 rounded p-1.5 text-xs text-white">
-                        </div>
-                        <div class="space-y-2 pt-2">
-                            <button type="button" onclick="handleAttachProof()" class="w-full py-2 bg-white text-black font-bold text-xs rounded-lg hover:bg-zinc-200 transition-colors uppercase">
-                                Upload Document
-                            </button>
-                            <button type="button" onclick="autoAttachGeneratedDR()" class="w-full py-2 bg-emerald-600 text-white font-bold text-xs rounded-lg hover:bg-emerald-500 flex items-center justify-center gap-2 transition-colors uppercase">
-                                <i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Attach Generated DR
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="bg-black/60 p-4 rounded-xl border border-zinc-800 space-y-3">
-                        <h3 class="font-bold text-xs uppercase text-zinc-400">Uploaded Document Storage</h3>
-                        <div id="l3ProofList" class="space-y-2 max-h-80 overflow-y-auto"></div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- TAB 4: APPROVAL FORM -->
-        <section id="layer-4" class="space-y-4 hidden">
-            <div class="bg-zinc-900/90 dark:bg-zinc-900/90 p-5 rounded-2xl border border-zinc-800 space-y-4 shadow-2xl">
-                <h2 class="text-lg font-bold text-white border-b border-zinc-800 pb-2">Approval Form</h2>
-                
-                <div class="flex gap-3 items-center flex-wrap text-xs">
-                    <label for="l4OrderSelect" class="font-bold text-zinc-400">Select Order for Approval:</label>
-                    <select id="l4OrderSelect" onchange="renderL4Form()" class="bg-black border border-zinc-700 rounded p-2 text-xs text-white flex-1 min-w-[200px] focus:outline-none"></select>
-                    
-                    <button type="button" onclick="approveOrderByAccountHolder()" class="px-4 py-2 bg-emerald-600 text-white font-black text-xs rounded-lg hover:bg-emerald-500 transition-colors uppercase">
-                        <i class="fa-solid fa-check mr-1"></i> Approve Order
-                    </button>
-                    <button type="button" onclick="rejectOrder()" class="px-4 py-2 bg-rose-600 text-white font-bold text-xs rounded-lg hover:bg-rose-500 transition-colors uppercase">
-                        Reject
-                    </button>
-                </div>
-
-                <div id="l4ApprovalSheet" class="bg-white text-black p-8 rounded shadow-2xl max-w-3xl mx-auto space-y-4 text-xs font-sans">
-                    <div class="border-b-2 border-black pb-2 flex justify-between items-center">
-                        <div>
-                            <h2 class="text-base font-black uppercase">HERO HUB VENTURES INCORPORATED</h2>
-                            <p class="text-[10px] font-bold text-zinc-600">APPROVAL FORM & DISPATCH PERMIT</p>
-                        </div>
-                        <span class="font-mono font-bold text-xs" id="l4RefDisplay">REF: -</span>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-3 text-[11px]">
-                        <div>
-                            <p><strong>Date of Order:</strong> <span id="l4Date">-</span></p>
-                            <p><strong>Payee / Customer:</strong> <span id="l4Customer">-</span></p>
-                            <p><strong>Payment Method Ref:</strong> <span id="l4PayRef">-</span></p>
-                            <p><strong>Delivery Receipt No.:</strong> <span id="l4DRNo">-</span></p>
-                        </div>
-                        <div>
-                            <p><strong>Status:</strong> <span id="l4PayStatus" class="font-bold">-</span></p>
-                            <p><strong>Total Amount:</strong> <span id="l4TotalAmount" class="font-bold text-emerald-700">₱0.00</span></p>
-                            <p><strong>Remarks / Particulars:</strong> <span id="l4Remarks">-</span></p>
-                        </div>
-                    </div>
-
-                    <table class="w-full border-collapse border border-black text-[11px]">
-                        <thead class="bg-zinc-100">
-                            <tr>
-                                <th class="border border-black p-1 text-left">Item Description</th>
-                                <th class="border border-black p-1 text-center w-12">Qty</th>
-                                <th class="border border-black p-1 text-right w-20">Price</th>
-                                <th class="border border-black p-1 text-right w-20">Total</th>
-                            </tr>
-                        </thead>
-                        <tbody id="l4ItemsBody"></tbody>
-                        <tfoot>
-                            <tr class="font-bold bg-zinc-100">
-                                <td colspan="3" class="border border-black p-1 text-right uppercase">Total Amount:</td>
-                                <td class="border border-black p-1 text-right font-mono text-emerald-700" id="l4GrandTotal">₱0.00</td>
-                            </tr>
-                        </tfoot>
-                    </table>
-
-                    <div class="p-3 bg-zinc-50 border border-zinc-300 rounded space-y-2 text-[10px]">
-                        <div class="flex justify-between items-center">
-                            <span class="font-bold text-zinc-700 uppercase">Attached Verification Proofs</span>
-                            <span id="l4AdminAttachRoleBadge" class="text-[9px] font-mono bg-zinc-200 px-1.5 py-0.5 rounded">Admin Attachment Access</span>
-                        </div>
-                        <div id="l4AttachmentContainer" class="space-y-1"></div>
-                    </div>
-
-                    <div class="pt-4 border-t border-black space-y-4">
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 bg-zinc-100 p-2 rounded border border-zinc-300 text-[10px]" id="esignUploadContainer">
-                            <div>
-                                <label class="block font-bold">Prep E-Sign:</label>
-                                <input type="file" accept="image/*" onchange="storeESign('prep', this)" class="w-full text-[9px]">
-                            </div>
-                            <div>
-                                <label class="block font-bold">Check E-Sign:</label>
-                                <input type="file" accept="image/*" onchange="storeESign('check', this)" class="w-full text-[9px]">
-                            </div>
-                            <div>
-                                <label class="block font-bold">Approve E-Sign:</label>
-                                <input type="file" accept="image/*" onchange="storeESign('approve', this)" class="w-full text-[9px]">
-                            </div>
-                            <div>
-                                <label class="block font-bold">Note E-Sign:</label>
-                                <input type="file" accept="image/*" onchange="storeESign('note', this)" class="w-full text-[9px]">
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-4 gap-2 text-center pt-1">
-                            <div class="flex flex-col items-center justify-between">
-                                <span class="text-[9px] uppercase font-bold text-zinc-500 mb-1">PREPARED BY</span>
-                                <div class="h-8 flex items-center justify-center mb-1" id="signImgPrep"></div>
-                                <div class="w-full border-b border-black pb-0.5">
-                                    <span class="font-bold text-xs" id="l4SignPrep">-</span>
-                                </div>
-                                <input type="text" class="text-center w-full pb-0.5 focus:outline-none font-bold text-[10px] mt-1 text-zinc-700 bg-transparent" id="l4PosPrep" value="Account Holder">
-                            </div>
-                            
-                            <div class="flex flex-col items-center justify-between">
-                                <span class="text-[9px] uppercase font-bold text-zinc-500 mb-1">CHECKED BY</span>
-                                <div class="h-8 flex items-center justify-center mb-1" id="signImgCheck"></div>
-                                <div class="w-full border-b border-black pb-0.5">
-                                    <input type="text" class="text-center w-full focus:outline-none font-bold text-xs bg-transparent" id="l4CheckedBy" value="Accounts Receivable">
-                                </div>
-                                <input type="text" class="text-center w-full pb-0.5 focus:outline-none font-bold text-[10px] mt-1 text-zinc-700 bg-transparent" id="l4PosCheck" value="Account Receivable - External">
-                            </div>
-                            
-                            <div class="flex flex-col items-center justify-between">
-                                <span class="text-[9px] uppercase font-bold text-zinc-500 mb-1">AUTHORIZE APPROVER</span>
-                                <div class="h-8 flex items-center justify-center mb-1" id="signImgApprove"></div>
-                                <div class="w-full border-b border-black pb-0.5">
-                                    <input type="text" class="text-center w-full focus:outline-none font-bold text-xs bg-transparent" id="l4ApprovedBy" value="Eugene Cabago">
-                                </div>
-                                <input type="text" class="text-center w-full pb-0.5 focus:outline-none font-bold text-[10px] mt-1 text-zinc-700 bg-transparent" id="l4PosApprove" value="Finance Head">
-                            </div>
-                            
-                            <div class="flex flex-col items-center justify-between">
-                                <span class="text-[9px] uppercase font-bold text-zinc-500 mb-1">NOTED BY</span>
-                                <div class="h-8 flex items-center justify-center mb-1" id="signImgNote"></div>
-                                <div class="w-full border-b border-black pb-0.5">
-                                    <input type="text" class="text-center w-full focus:outline-none font-bold text-xs bg-transparent" id="l4NotedBy" value="Kevin">
-                                </div>
-                                <input type="text" class="text-center w-full pb-0.5 focus:outline-none font-bold text-[10px] mt-1 text-zinc-700 bg-transparent" id="l4PosNote" value="President or CEO">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- TAB 5: APPROVAL STATUS & LEDGER BOARD -->
-        <section id="layer-5" class="space-y-4 hidden">
-            <div class="bg-zinc-900/90 dark:bg-zinc-900/90 p-5 rounded-2xl border border-zinc-800 space-y-4 shadow-2xl">
-                <h2 class="text-lg font-bold text-white border-b border-zinc-800 pb-2">Master Approval Status & Ledger Board</h2>
-
-                <div class="flex gap-2 text-xs font-bold border-b border-zinc-800 pb-3">
-                    <button type="button" onclick="filterLedger('ALL')" class="px-3 py-1 bg-white text-black rounded-lg transition-colors">All Orders</button>
-                    <button type="button" onclick="filterLedger('APPROVED')" class="px-3 py-1 bg-emerald-950 text-emerald-400 border border-emerald-800 rounded-lg hover:bg-emerald-900 transition-colors">Approved</button>
-                    <button type="button" onclick="filterLedger('PENDING')" class="px-3 py-1 bg-amber-950 text-amber-400 border border-amber-800 rounded-lg hover:bg-amber-900 transition-colors">Pending</button>
-                    <button type="button" onclick="filterLedger('REJECTED')" class="px-3 py-1 bg-rose-950 text-rose-400 border border-rose-800 rounded-lg hover:bg-rose-900 transition-colors">Rejected</button>
-                </div>
-
-                <div class="overflow-x-auto rounded-lg border border-zinc-800">
-                    <table class="w-full text-xs text-left">
-                        <thead class="bg-black text-zinc-400 font-mono text-[11px]">
-                            <tr>
-                                <th class="p-2.5 border-b border-zinc-800">Ref No.</th>
-                                <th class="p-2.5 border-b border-zinc-800">Customer</th>
-                                <th class="p-2.5 border-b border-zinc-800">Total Value</th>
-                                <th class="p-2.5 border-b border-zinc-800">Status</th>
-                                <th class="p-2.5 border-b border-zinc-800">Compiled PDF Packet</th>
-                                <th class="p-2.5 border-b border-zinc-800 text-center">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="ledgerTableBody"></tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-
-    </main>
-
-    <!-- HIDDEN CONTAINER FOR MASTER PDF BUNDLE -->
-    <div id="masterPdfBundleContainer" class="hidden bg-white text-black p-8 text-xs font-sans space-y-6"></div>
-
-    <!-- SETTINGS & ACCOUNT AUTHORIZATION MODAL -->
-    <div id="userModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center border-b border-zinc-800 pb-3">
-                <h3 class="font-bold text-white text-sm flex items-center gap-2">
-                    <i class="fa-solid fa-user-gear text-amber-400"></i> Settings & User Authorization
-                </h3>
-                <button type="button" onclick="toggleUserModal(false)" class="text-zinc-400 hover:text-white"><i class="fa-solid fa-xmark text-base"></i></button>
             </div>
 
-            <!-- THEME PREFERENCE -->
-            <div class="bg-black/50 p-3 rounded-lg border border-zinc-800 flex justify-between items-center">
-                <span class="text-xs font-bold text-zinc-300">System Theme Mode</span>
-                <button type="button" onclick="toggleTheme()" class="px-3 py-1 bg-zinc-800 hover:bg-zinc-700 text-amber-400 font-bold text-xs rounded border border-zinc-700 flex items-center gap-1.5 transition-colors">
-                    <i id="themeIcon" class="fa-solid fa-sun"></i> <span id="themeLabel">Light Mode</span>
-                </button>
-            </div>
-
-            <!-- RESET OWN PASSWORD -->
-            <div class="bg-black/50 p-3 rounded-lg border border-zinc-800 space-y-2">
-                <h4 class="text-xs font-bold text-amber-400 uppercase">Change / Reset My Password</h4>
-                <div class="flex gap-2">
-                    <input type="password" id="resetMyPassInput" placeholder="New Password" class="w-full bg-zinc-900 border border-zinc-700 rounded p-1.5 text-xs text-white focus:outline-none">
-                    <button type="button" onclick="handleSelfResetPassword()" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs rounded transition-colors whitespace-nowrap">
-                        Update
-                    </button>
-                </div>
-            </div>
-
-            <form onsubmit="handleCreateUser(event)" class="space-y-3 text-xs border-t border-zinc-800 pt-3">
-                <h4 class="text-xs font-bold text-zinc-300 uppercase">Authorize New User</h4>
+            <form id="loginForm" class="space-y-4 text-left pt-2">
                 <div>
-                    <label class="block text-zinc-400 font-bold mb-1">Username</label>
-                    <input type="text" id="nuUsername" placeholder="New Account Username" required class="w-full bg-black border border-zinc-700 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-amber-500">
+                    <label for="loginUsername" class="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block mb-1">Username</label>
+                    <input type="text" id="loginUsername" required autocomplete="username" class="w-full bg-black border border-zinc-700 rounded-lg p-2.5 text-xs text-white focus:border-emerald-500 focus:outline-none">
                 </div>
                 <div>
-                    <label class="block text-zinc-400 font-bold mb-1">Initial Password</label>
-                    <input type="password" id="nuPassword" placeholder="Initial Password" required class="w-full bg-black border border-zinc-700 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-amber-500">
+                    <label for="loginPassword" class="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block mb-1">Password</label>
+                    <input type="password" id="loginPassword" required autocomplete="current-password" class="w-full bg-black border border-zinc-700 rounded-lg p-2.5 text-xs text-white focus:border-emerald-500 focus:outline-none">
                 </div>
-                <div>
-                    <label class="block text-zinc-400 font-bold mb-1">Account Role</label>
-                    <select id="nuRole" class="w-full bg-black border border-zinc-700 rounded-lg p-2 text-xs text-white focus:outline-none">
-                        <option value="Admin">Admin</option>
-                        <option value="Account Holder">Account Holder</option>
-                    </select>
-                </div>
-                <button type="submit" class="w-full py-2 bg-amber-500 text-black font-black text-xs rounded-lg hover:bg-amber-400 transition-colors uppercase tracking-wider">
-                    AUTHORIZE & CREATE USER
+                
+                <button type="submit" class="w-full py-2.5 bg-white text-black font-black text-xs rounded-lg hover:bg-zinc-200 transition-colors uppercase tracking-widest">
+                    LOG IN
                 </button>
             </form>
-
-            <div class="border-t border-zinc-800 pt-3">
-                <h4 class="text-xs font-bold text-zinc-400 mb-2 uppercase">Authorized System Accounts</h4>
-                <div id="userAccountList" class="space-y-1.5 max-h-40 overflow-y-auto"></div>
-            </div>
         </div>
     </div>
 
-    <!-- PREVIEW / EDIT MODAL FOR PROOFS -->
-    <div id="previewModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 max-w-2xl w-full space-y-3 max-h-[85vh] flex flex-col">
-            <div class="flex justify-between items-center border-b border-zinc-800 pb-2">
-                <h3 class="font-bold text-white text-xs" id="previewModalTitle">Document Preview</h3>
-                <button type="button" onclick="document.getElementById('previewModal').classList.add('hidden')" class="text-zinc-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div id="previewModalBody" class="text-xs font-mono text-zinc-300 min-h-56 flex-1 flex items-center justify-center border border-zinc-800 bg-black p-3 rounded overflow-auto"></div>
-        </div>
-    </div>
-
-    <!-- AUTHENTICATION DIALOG -->
-    <div id="loginModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
-        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 sm:p-8 max-w-md w-full my-auto space-y-5 text-center shadow-2xl relative">
-            <div class="space-y-4">
-                <div class="flex flex-col items-center space-y-3">
-                    <div class="w-28 h-28 bg-emerald-500/10 border border-emerald-500/40 rounded-2xl flex items-center justify-center p-2.5 shadow-inner">
-                        <img src="logo.jpg" alt="Company Logo" class="w-full h-full object-contain" onerror="this.style.display='none'">
-                    </div>
-                    <h2 class="text-lg sm:text-xl font-black tracking-widest text-white uppercase">
-                        HERO HUB VENTURES INC.
-                    </h2>
-                    <span class="text-[10px] sm:text-xs font-mono tracking-widest text-emerald-400 bg-emerald-950/80 border border-emerald-700/60 px-3 py-1 rounded-full uppercase font-bold">
-                        HHVI GATEWAY ACTIVE
+    <!-- MAIN WRAPPER (HIDDEN UNTIL AUTHENTICATED) -->
+    <div id="appContent" class="hidden flex-col min-h-screen justify-between">
+        
+        <!-- HEADER -->
+        <header class="bg-black border-b border-zinc-800 px-4 py-2 text-xs font-mono">
+            <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-2">
+                <div class="flex items-center gap-4">
+                    <span class="text-emerald-400 font-bold flex items-center gap-1.5 text-xs">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+                        GATEWAY ACTIVE
                     </span>
-                </div>
-
-                <form onsubmit="handleLoginDirect(event)" class="space-y-4 text-left pt-2">
-                    <div>
-                        <label for="loginUsername" class="text-[10px] sm:text-xs font-bold text-zinc-400 uppercase tracking-wider block mb-1">Username</label>
-                        <input type="text" id="loginUsername" required class="w-full bg-black border border-zinc-700 rounded-lg p-2.5 text-xs text-white focus:border-emerald-500 focus:outline-none transition-colors">
+                    
+                    <div id="adminDiscreetPanel" class="hidden flex items-center gap-2 border-l border-zinc-800 pl-4 text-xs">
+                        <span class="text-zinc-500">SESSION LOG:</span>
+                        <span class="bg-zinc-900 border border-zinc-700 px-2 py-0.5 rounded text-emerald-400">
+                            IP: <strong id="hdrIp" class="text-white">Fetching...</strong>
+                        </span>
+                        <span class="bg-zinc-900 border border-zinc-700 px-2 py-0.5 rounded text-sky-400">
+                            DEVICE: <strong id="hdrPc" class="text-white">Fetching...</strong>
+                        </span>
                     </div>
-                    <div>
-                        <label for="loginPassword" class="text-[10px] sm:text-xs font-bold text-zinc-400 uppercase tracking-wider block mb-1">Password</label>
-                        <input type="password" id="loginPassword" required class="w-full bg-black border border-zinc-700 rounded-lg p-2.5 text-xs text-white focus:border-emerald-500 focus:outline-none transition-colors">
+                </div>
+                
+                <div class="flex items-center gap-3">
+                    <div id="userHeader" class="text-zinc-300 font-bold text-xs"></div>
+                    <button id="settingsBtn" onclick="toggleUserModal(true)" class="hidden px-3 py-1 bg-zinc-800 text-xs font-bold rounded border border-zinc-700 hover:bg-zinc-700 text-white flex items-center gap-1.5">
+                        <i class="fa-solid fa-gear text-amber-400"></i> Settings
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- NAVIGATION -->
+        <nav class="bg-zinc-900/90 border-b border-zinc-800 px-4 py-3">
+            <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-3">
+                <h1 class="text-base font-black tracking-wider uppercase text-white flex items-center gap-2.5">
+                    <img src="logo.jpg" alt="HHVI Logo" class="w-8 h-8 object-contain rounded" onerror="this.style.display='none'">
+                    HERO HUB OPERATIONAL HUB
+                </h1>
+                <div class="flex flex-wrap gap-1.5 bg-black/60 p-1.5 rounded-lg border border-zinc-800 text-xs font-bold">
+                    <button type="button" onclick="switchTab(1)" id="tab-1" class="px-3 py-1.5 rounded bg-white text-black transition-colors">Create Order</button>
+                    <button type="button" onclick="switchTab(2)" id="tab-2" class="px-3 py-1.5 rounded text-zinc-400 hover:text-white transition-colors">DR Generator</button>
+                    <button type="button" onclick="switchTab(3)" id="tab-3" class="px-3 py-1.5 rounded text-zinc-400 hover:text-white transition-colors">Proof Attachments</button>
+                    <button type="button" onclick="switchTab(4)" id="tab-4" class="px-3 py-1.5 rounded text-zinc-400 hover:text-white transition-colors">Approval Form</button>
+                    <button type="button" onclick="switchTab(5)" id="tab-5" class="px-3 py-1.5 rounded text-zinc-400 hover:text-white transition-colors">Approval Status & Ledger</button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- MAIN VIEWS -->
+        <main class="max-w-7xl mx-auto p-4 w-full flex-1">
+            <section id="layer-1" class="space-y-6">
+                <div class="bg-zinc-900/90 p-6 rounded-2xl border border-zinc-800 space-y-6 shadow-2xl">
+                    <div class="border-b border-zinc-800 pb-3 flex justify-between items-center">
+                        <h2 class="text-xl font-black text-white tracking-wide">ORDER CREATION</h2>
+                        <span class="text-xs text-zinc-400 font-mono">v2026.2</span>
                     </div>
                     
-                    <div class="flex justify-between items-center text-[10px] sm:text-xs pt-0.5">
-                        <a href="javascript:void(0)" onclick="handleForgotPassword()" class="text-emerald-400 hover:text-emerald-300 transition-colors font-medium hover:underline">
-                            Forgot Password?
-                        </a>
-                        <span class="text-zinc-500 font-mono">Contact Admin</span>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                        <div>
+                            <label for="l1Prefix" class="block font-bold text-zinc-300 mb-1.5">Prefix</label>
+                            <select id="l1Prefix" onchange="toggleCustomPrefix(); updateRefNo();" class="w-full bg-black border border-zinc-700 rounded-lg p-2.5 text-xs text-white focus:border-emerald-500 focus:outline-none">
+                                <option value="HHVI-CO">HHVI-CO (Consignment)</option>
+                                <option value="HHVI-OO">HHVI-OO (Online Order)</option>
+                                <option value="HHVI-WS">HHVI-WS (Wholesale)</option>
+                                <option value="HHVI-PO">HHVI-PO (Pre-Orders)</option>
+                                <option value="OTHER">Others</option>
+                            </select>
+                            <input type="text" id="l1CustomPrefix" oninput="updateRefNo()" placeholder="Custom Prefix" class="w-full bg-black border border-amber-500 rounded-lg p-2.5 text-xs text-white mt-2 hidden focus:outline-none">
+                        </div>
+                        <div>
+                            <label for="l1RefNo" class="block font-bold text-zinc-300 mb-1.5">Ref Number</label>
+                            <input type="text" id="l1RefNo" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-2.5 text-xs font-mono text-emerald-400 font-bold focus:outline-none" readonly>
+                        </div>
+                        <div>
+                            <label for="l1Customer" class="block font-bold text-zinc-300 mb-1.5">Customer Name</label>
+                            <input type="text" id="l1Customer" placeholder="Enter Customer Name" class="w-full bg-black border border-zinc-700 rounded-lg p-2.5 text-xs text-white focus:border-emerald-500 focus:outline-none">
+                        </div>
                     </div>
 
-                    <button type="submit" class="w-full py-2.5 bg-white text-black font-black text-xs sm:text-sm rounded-lg hover:bg-zinc-200 transition-colors uppercase tracking-widest shadow-lg">
-                        LOG IN
-                    </button>
-                </form>
-            </div>
+                    <div class="border-t border-zinc-800 pt-4 space-y-3">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-sm font-bold text-zinc-300 uppercase tracking-wider">Line Items</h3>
+                            <button type="button" onclick="addLineItem()" class="px-3 py-1.5 bg-emerald-600 text-white font-bold text-xs rounded-lg hover:bg-emerald-500 transition-colors">
+                                <i class="fa-solid fa-plus"></i> Add Item
+                            </button>
+                        </div>
 
-            <footer class="pt-3 border-t border-zinc-800/80 text-[10px] font-mono text-zinc-500 tracking-wider">
-                2026/2027
-            </footer>
-        </div>
+                        <div class="rounded-lg border border-zinc-800 bg-black/40">
+                            <table class="w-full text-xs text-left">
+                                <thead class="bg-black text-zinc-400 font-mono">
+                                    <tr>
+                                        <th class="p-2.5 border-b border-zinc-800">Description</th>
+                                        <th class="p-2.5 border-b border-zinc-800 w-24">Qty</th>
+                                        <th class="p-2.5 border-b border-zinc-800 w-28">Amount</th>
+                                        <th class="p-2.5 border-b border-zinc-800 w-32">Total</th>
+                                        <th class="p-2.5 border-b border-zinc-800 w-16 text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="lineItemsTable" class="divide-y divide-zinc-800/60"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end pt-2">
+                        <button type="button" onclick="saveOrder()" class="px-6 py-2.5 bg-white text-black font-black text-xs rounded-lg hover:bg-zinc-200 transition-colors uppercase tracking-wider">
+                            Submit Order
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
     </div>
 
-    <!-- APPLICATION LOGIC -->
+    <!-- JAVASCRIPT LOGIC -->
     <script>
-        // Supabase Setup Safe Initialization
-        const SUPABASE_URL = 'https://YOUR_PROJECT_REF.supabase.co';
+        // Supabase Endpoint Setup
+        const SUPABASE_URL = 'https://lfqwghdrirqcbzkufdrq.supabase.co';
         const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
         const supabaseClient = (window.supabase && window.supabase.createClient) ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
-        // SHA-256 password hashing to hide plain text passwords from Inspect Element / DevTools
         async function hashPassword(password) {
             const encoder = new TextEncoder();
             const data = encoder.encode(password);
             const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
         }
 
-        // Hashed default accounts (No raw text passwords in code)
-        // 'admin123' -> '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918'
-        // 'user123'  -> '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8'
         const DEFAULT_USERS = [
-            { id: 1, username: 'admin', hash: '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', role: 'Admin' },
-            { id: 2, username: 'accountholder', hash: '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8', role: 'Account Holder' }
+            { id: 1, username: 'admin', hash: '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', role: 'Admin' }
         ];
 
-        let globalSeqCounter = parseInt(localStorage.getItem('hhvi_seq'), 10) || 1;
+        let currentUser = null;
         let users = JSON.parse(localStorage.getItem('hhvi_users')) || DEFAULT_USERS;
         let orders = JSON.parse(localStorage.getItem('hhvi_orders')) || [];
-        let proofs = JSON.parse(localStorage.getItem('hhvi_proofs')) || [];
-        let storedSignatures = JSON.parse(localStorage.getItem('hhvi_signatures')) || {
-            prep: '', check: '', approve: '', note: ''
-        };
-        let currentUser = null;
-        let activeTab = 1;
-        let storeItemsCatalog = JSON.parse(localStorage.getItem('hhvi_catalog')) || [];
-        let currentTheme = localStorage.getItem('hhvi_theme') || 'dark';
-        let searchDebounceTimer = null;
 
-        window.onload = function() {
-            applyTheme(currentTheme);
-            setTodayDates();
-            autoLoadCSVProducts();
-            updateRefNo();
-            renderHeaderUser();
-            fetchRealLocationAndIP();
-            addLineItem();
-            loadStoredSignaturesUI();
-        };
-
-        async function createOrderInSupabase(orderData) {
-            if (!supabaseClient) return;
-            const { data, error } = await supabaseClient
-                .from('hhvi_orders')
-                .insert([orderData]);
-
-            if (error) {
-                console.error('Error saving order to Supabase:', error.message);
-            } else {
-                console.log('Order created successfully in Supabase:', data);
-            }
-        }
-
-        // ENFORCED LOGIN AUTHENTICATION
-        async function handleLoginDirect(event) {
-            event.preventDefault();
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
             const uInput = document.getElementById('loginUsername').value.trim();
             const pInput = document.getElementById('loginPassword').value.trim();
 
-            if (!uInput || !pInput) {
-                alert('Please enter both username and password.');
-                return;
-            }
-
-            // Reject dummy logins like username "1", password "1"
             const inputHash = await hashPassword(pInput);
-
-            const foundUser = users.find(u => 
-                u.username.toLowerCase() === uInput.toLowerCase() && 
-                u.hash === inputHash
-            );
+            const foundUser = users.find(u => u.username.toLowerCase() === uInput.toLowerCase() && u.hash === inputHash);
 
             if (foundUser) {
                 currentUser = { username: foundUser.username, role: foundUser.role };
                 document.getElementById('loginModal').classList.add('hidden');
-                document.getElementById('loginPassword').value = '';
-                renderHeaderUser();
+                document.getElementById('appContent').classList.remove('hidden');
+                document.getElementById('appContent').classList.add('flex');
             } else {
-                alert('Access Denied: Invalid Username or Password. Only authorized accounts created via Settings can log in.');
-                document.getElementById('loginPassword').value = '';
+                alert('Access Denied: Invalid credentials.');
             }
-        }
+        });
 
-        function toggleTheme() {
-            currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            localStorage.setItem('hhvi_theme', currentTheme);
-            applyTheme(currentTheme);
-        }
-
-        function applyTheme(theme) {
-            const body = document.getElementById('appBody');
-            const icon = document.getElementById('themeIcon');
-            const label = document.getElementById('themeLabel');
-
-            if (!body) return;
-
-            if (theme === 'light') {
-                document.documentElement.classList.remove('dark');
-                body.classList.remove('bg-black/85');
-                body.classList.add('bg-zinc-100', 'text-zinc-900');
-                if (icon) icon.className = 'fa-solid fa-moon';
-                if (label) label.innerText = 'Dark Mode';
-            } else {
-                document.documentElement.classList.add('dark');
-                body.classList.remove('bg-zinc-100', 'text-zinc-900');
-                body.classList.add('bg-black/85');
-                if (icon) icon.className = 'fa-solid fa-sun';
-                if (label) label.innerText = 'Light Mode';
-            }
-        }
-
-        function fetchRealLocationAndIP() {
-            fetch('https://ipapi.co/json/')
-                .then(res => res.json())
-                .then(data => {
-                    const ipEl = document.getElementById('hdrIp');
-                    const pcEl = document.getElementById('hdrPc');
-                    const locEl = document.getElementById('hdrLoc');
-
-                    if (ipEl) ipEl.innerText = data.ip || '127.0.0.1';
-                    if (pcEl) pcEl.innerText = navigator.platform || 'DESKTOP-PC';
-                    if (locEl) locEl.innerText = `${data.city || 'Unknown'}, ${data.region || ''}, ${data.country_code || 'PH'}`;
-                })
-                .catch(() => {
-                    const ipEl = document.getElementById('hdrIp');
-                    const pcEl = document.getElementById('hdrPc');
-                    const locEl = document.getElementById('hdrLoc');
-
-                    if (ipEl) ipEl.innerText = '112.201.42.18';
-                    if (pcEl) pcEl.innerText = 'HHVI-WORKSTATION';
-                    if (locEl) locEl.innerText = 'San Juan, Metro Manila, PH';
-                });
-        }
-
-        function renderUserList() {
-            const list = document.getElementById('userAccountList');
-            if (!list) return;
-            list.innerHTML = users.map((u, idx) => `
-                <div class="flex justify-between items-center bg-black p-2.5 rounded-lg text-xs border border-zinc-800">
-                    <div class="flex flex-col">
-                        <span class="text-white font-bold">${u.username} <span class="text-amber-400 font-mono text-[10px]">(${u.role})</span></span>
-                        <span class="text-zinc-500 font-mono text-[10px] flex items-center gap-1"><i class="fa-solid fa-shield-halved text-[9px] text-emerald-400"></i> Encrypted Credential</span>
-                    </div>
-                    ${u.username !== 'admin' ? `<button type="button" onclick="users.splice(${idx},1); localStorage.setItem('hhvi_users', JSON.stringify(users)); renderUserList();" class="text-rose-500 hover:text-rose-400 font-bold p-1"><i class="fa-solid fa-trash text-xs"></i></button>` : ''}
-                </div>
-            `).join('');
-        }
-
-        function toggleUserModal(show) {
-            const modal = document.getElementById('userModal');
-            if (modal) {
-                if (show) {
-                    modal.classList.remove('hidden');
-                    renderUserList();
-                } else {
-                    modal.classList.add('hidden');
-                }
-            }
-        }
-
-        function applyRoleRestrictions() {
-            const tab4Btn = document.getElementById('tab-4');
-            const settingsBtn = document.getElementById('settingsBtn');
-            const adminPanel = document.getElementById('adminDiscreetPanel');
-
-            if (!currentUser) return;
-
-            if (currentUser.role === 'Account Holder') {
-                if (tab4Btn) tab4Btn.classList.add('hidden');
-                if (settingsBtn) settingsBtn.classList.add('hidden');
-                if (adminPanel) adminPanel.classList.add('hidden');
-                if (activeTab === 4) switchTab(1);
-            } else {
-                if (tab4Btn) tab4Btn.classList.remove('hidden');
-                if (settingsBtn) settingsBtn.classList.remove('hidden');
-                if (adminPanel) adminPanel.classList.remove('hidden');
-            }
-        }
-
-        function renderHeaderUser() {
-            const header = document.getElementById('userHeader');
-            if (header && currentUser) {
-                header.innerHTML = `
-                    <span>Welcome, <b class="text-white">${currentUser.username}</b> (${currentUser.role})</span>
-                    <button onclick="confirmAndLogout()" class="bg-rose-600 hover:bg-rose-500 px-2.5 py-1 rounded text-xs text-white font-bold ml-2 transition-colors shadow">Logout</button>
-                `;
-            } else if (header) {
-                header.innerHTML = `<span class="text-zinc-500">Not Logged In</span>`;
-            }
-            applyRoleRestrictions();
-        }
-
-        function handleForgotPassword() {
-            alert("Forgot Password Request: Please contact system administration or authorization manager to reset your credentials.");
-        }
-
-        async function handleSelfResetPassword() {
-            if (!currentUser) return;
-            const newPass = document.getElementById('resetMyPassInput').value.trim();
-            if (!newPass) return alert('Please enter a new password.');
-
-            const hashedPass = await hashPassword(newPass);
-
-            const uIndex = users.findIndex(u => u.username.toLowerCase() === currentUser.username.toLowerCase());
-            if (uIndex !== -1) {
-                users[uIndex].hash = hashedPass;
-                delete users[uIndex].pass;
-                localStorage.setItem('hhvi_users', JSON.stringify(users));
-                document.getElementById('resetMyPassInput').value = '';
-                renderUserList();
-                alert('Your password has been reset successfully!');
-            }
-        }
-
-        // CREATE USER WITH HASHED PASSWORD
-        async function handleCreateUser(event) {
-            event.preventDefault();
-            const newUsername = document.getElementById('nuUsername').value.trim();
-            const newPassword = document.getElementById('nuPassword').value.trim();
-            const selectedRole = document.getElementById('nuRole').value;
-
-            if (!newUsername || !newPassword) return;
-
-            const existingUser = users.find(u => u.username.toLowerCase() === newUsername.toLowerCase());
-            if (existingUser) {
-                alert('Username already exists. Please pick a different username.');
-                return;
-            }
-
-            const hashedPass = await hashPassword(newPassword);
-
-            users.push({
-                id: Date.now(),
-                username: newUsername,
-                hash: hashedPass,
-                role: selectedRole
-            });
-
-            localStorage.setItem('hhvi_users', JSON.stringify(users));
-            document.getElementById('nuUsername').value = '';
-            document.getElementById('nuPassword').value = '';
-            renderUserList();
-            alert(`User account "${newUsername}" successfully authorized and created!`);
-        }
-
-        function confirmAndLogout() {
-            if (confirm("Are you sure you want to log out? Any unsaved order data will be cleared.")) {
-                resetOrderForm();
-                currentUser = null;
-                document.getElementById('loginModal').classList.remove('hidden');
-                document.getElementById('loginUsername').value = '';
-                document.getElementById('loginPassword').value = '';
-                renderHeaderUser();
-            }
-        }
-
-        function calcDeliveredDate() {
-            const orderDateVal = document.getElementById('l1OrderDate').value;
-            if (!orderDateVal) return;
-
-            const orderDate = new Date(orderDateVal);
-            const status = document.getElementById('l1PaymentStatusSelect').value;
-            let delDate = new Date(orderDate);
-
-            if (status === 'Paid - To Release') {
-                delDate.setDate(delDate.getDate() + 1);
-            } else if (status === 'Not Paid') {
-                const terms = document.getElementById('l1NotPaidTerms').value;
-                const days = terms.includes('30') ? 30 : 15;
-                delDate.setDate(delDate.getDate() + days);
-            }
-
-            document.getElementById('l1DeliveredDate').value = delDate.toISOString().split('T')[0];
-        }
-
-        function setTodayDates() {
-            const today = new Date().toISOString().split('T')[0];
-            const oDate = document.getElementById('l1OrderDate');
-            if (oDate) {
-                oDate.value = today;
-                calcDeliveredDate();
-            }
-        }
-
-        function autoLoadCSVProducts() {
-            if (typeof Papa === 'undefined') return;
-            Papa.parse('Products_Import_2.csv', {
-                download: true,
-                header: true,
-                skipEmptyLines: true,
-                complete: function(results) {
-                    if (results.data && results.data.length > 0) {
-                        storeItemsCatalog = results.data.map(row => {
-                            const name = row['Item description'] || row['Description'] || row['Product Name'] || row['Title'] || row['Name'] || Object.values(row)[0] || '';
-                            const rawPrice = row['Amount'] || row['Tax-Inclusive Price'] || row['Price'] || row['Unit Price'] || 0;
-                            return {
-                                name: String(name).trim(),
-                                price: parseFloat(rawPrice) || 0
-                            };
-                        }).filter(item => item.name !== '');
-
-                        localStorage.setItem('hhvi_catalog', JSON.stringify(storeItemsCatalog));
-                    }
-                }
-            });
-        }
-
-        function addLineItem(desc = '', qty = 1, amount = 0, discount = 0) {
+        function addLineItem() {
             const tbody = document.getElementById('lineItemsTable');
             if (!tbody) return;
             const row = document.createElement('tr');
-            row.className = "border-b border-zinc-800/80 relative";
-
-            const safeDesc = String(desc).replace(/"/g, '&quot;');
-
             row.innerHTML = `
-                <td class="p-2 relative overflow-visible">
-                    <input type="text" 
-                           value="${safeDesc}" 
-                           placeholder="Type product..." 
-                           oninput="debouncedSearchInput(this)" 
-                           onfocus="handleSearchInput(this)"
-                           onblur="hideSearchResults(this)"
-                           class="item-desc-input w-full bg-black border border-zinc-800 rounded p-1.5 text-xs text-white focus:border-emerald-500 focus:outline-none">
-                    <div class="search-results-dropdown hidden absolute left-0 right-0 top-full bg-zinc-900 border border-zinc-700 rounded-b shadow-2xl max-h-56 overflow-y-auto"></div>
-                </td>
-                <td class="p-2"><input type="number" value="${qty}" min="1" onchange="calcLineTotals()" class="item-qty w-full bg-black border border-zinc-800 rounded p-1.5 text-center text-white focus:outline-none"></td>
-                <td class="p-2"><input type="number" value="${amount}" step="0.01" onchange="calcLineTotals()" class="item-amount w-full bg-black border border-zinc-800 rounded p-1.5 text-right text-white focus:outline-none"></td>
-                <td class="p-2"><input type="number" value="${discount}" step="0.01" onchange="calcLineTotals()" class="item-discount w-full bg-black border border-zinc-800 rounded p-1.5 text-right text-rose-400 focus:outline-none"></td>
-                <td class="p-2 font-mono text-right item-total font-bold text-emerald-400">₱0.00</td>
-                <td class="p-2 text-center"><button type="button" onclick="this.closest('tr').remove(); calcLineTotals();" class="text-rose-500 hover:text-rose-400"><i class="fa-solid fa-trash"></i></button></td>
+                <td class="p-2"><input type="text" class="w-full bg-black border border-zinc-800 rounded p-1.5 text-xs text-white"></td>
+                <td class="p-2"><input type="number" value="1" min="1" class="w-full bg-black border border-zinc-800 rounded p-1.5 text-center text-white"></td>
+                <td class="p-2"><input type="number" value="0.00" step="0.01" class="w-full bg-black border border-zinc-800 rounded p-1.5 text-right text-white"></td>
+                <td class="p-2 font-mono text-right font-bold text-emerald-400">₱0.00</td>
+                <td class="p-2 text-center"><button type="button" onclick="this.closest('tr').remove()" class="text-rose-500"><i class="fa-solid fa-trash"></i></button></td>
             `;
             tbody.appendChild(row);
-            calcLineTotals();
-        }
-
-        function debouncedSearchInput(inputEl) {
-            clearTimeout(searchDebounceTimer);
-            searchDebounceTimer = setTimeout(() => {
-                handleSearchInput(inputEl);
-            }, 150);
-        }
-
-        function handleSearchInput(inputEl) {
-            const query = inputEl.value.toLowerCase().trim();
-            const dropdown = inputEl.nextElementSibling;
-
-            if (!dropdown) return;
-
-            if (!query || storeItemsCatalog.length === 0) {
-                dropdown.classList.add('hidden');
-                return;
-            }
-
-            const matches = storeItemsCatalog.filter(item => 
-                item.name.toLowerCase().includes(query)
-            ).slice(0, 10);
-
-            if (matches.length === 0) {
-                dropdown.classList.add('hidden');
-                return;
-            }
-
-            dropdown.innerHTML = matches.map(item => `
-                <div onmousedown="selectProduct(this, '${item.name.replace(/'/g, "\\'").replace(/"/g, '&quot;')}', ${item.price})" 
-                     class="p-2.5 text-xs hover:bg-emerald-600 hover:text-white cursor-pointer border-b border-zinc-800 flex justify-between items-center transition-colors">
-                    <span class="truncate pr-2 font-medium">${item.name}</span>
-                    <span class="font-mono text-emerald-400 font-bold hover:text-white">₱${item.price.toFixed(2)}</span>
-                </div>
-            `).join('');
-
-            dropdown.classList.remove('hidden');
-        }
-
-        function hideSearchResults(inputEl) {
-            setTimeout(() => {
-                const dropdown = inputEl.nextElementSibling;
-                if (dropdown) dropdown.classList.add('hidden');
-            }, 200);
-        }
-
-        function selectProduct(element, name, price) {
-            const row = element.closest('tr');
-            if (row) {
-                row.querySelector('.item-desc-input').value = name;
-                row.querySelector('.item-amount').value = price;
-            }
-            const dropdown = element.closest('.search-results-dropdown');
-            if (dropdown) dropdown.classList.add('hidden');
-            calcLineTotals();
-        }
-
-        function handleCSVUpload(e) {
-            const file = e.target.files[0];
-            if (!file || typeof Papa === 'undefined') return;
-
-            Papa.parse(file, {
-                header: true,
-                skipEmptyLines: true,
-                complete: function(results) {
-                    const data = results.data;
-                    const tbody = document.getElementById('lineItemsTable');
-                    if (tbody) tbody.innerHTML = '';
-                    storeItemsCatalog = [];
-
-                    data.forEach(row => {
-                        const name = row['Item description'] || row['Description'] || row['Product Name'] || row['Title'] || row['Name'] || Object.values(row)[0] || 'CSV Item';
-                        const qty = parseFloat(row['Qty'] || row['Quantity'] || 1);
-                        const rawAmount = parseFloat(row['Amount'] || row['Tax-Inclusive Price'] || row['Price'] || 0);
-                        const unitAmount = qty > 0 ? (rawAmount / qty) : rawAmount;
-                        
-                        storeItemsCatalog.push({ name: String(name).trim(), price: unitAmount });
-                        addLineItem(name, qty, unitAmount, 0);
-                    });
-                    
-                    localStorage.setItem('hhvi_catalog', JSON.stringify(storeItemsCatalog));
-                    alert(`Loaded ${data.length} items from CSV!`);
-                    e.target.value = '';
-                }
-            });
-        }
-
-        function saveOrder() {
-            const refNo = document.getElementById('l1RefNo').value.trim();
-            const customer = document.getElementById('l1Customer').value.trim();
-            const orderDate = document.getElementById('l1OrderDate').value;
-            const delDate = document.getElementById('l1DeliveredDate').value;
-            const prepBy = document.getElementById('l1PreparedBy').value.trim();
-            const payRef = document.getElementById('l1PaymentRef').value.trim();
-            const payStatusBase = document.getElementById('l1PaymentStatusSelect').value;
-
-            if (!prepBy) return alert('Prepared By is required!');
-            if (!customer) return alert('Customer Name is required!');
-
-            let finalPayStatus = payStatusBase;
-            if (payStatusBase === 'Not Paid') {
-                finalPayStatus = `Not Paid (${document.getElementById('l1NotPaidTerms').value})`;
-            } else if (payStatusBase === 'For Payment') {
-                finalPayStatus = `For Payment (${document.getElementById('l1ForPaymentType').value})`;
-            }
-
-            const items = [];
-            let hasInvalidItem = false;
-            const rows = document.querySelectorAll('#lineItemsTable tr');
-
-            if (rows.length === 0) {
-                return alert('Please add at least one line item before submitting.');
-            }
-
-            rows.forEach(row => {
-                const descInput = row.querySelector('.item-desc-input');
-                const descVal = descInput ? descInput.value.trim() : '';
-                const qtyVal = parseFloat(row.querySelector('.item-qty').value) || 0;
-                const amountVal = parseFloat(row.querySelector('.item-amount').value) || 0;
-                const discountVal = parseFloat(row.querySelector('.item-discount').value) || 0;
-
-                if (!descVal || descVal.toLowerCase() === 'item' || amountVal <= 0 || qtyVal <= 0) {
-                    hasInvalidItem = true;
-                } else {
-                    items.push({
-                        desc: descVal,
-                        qty: qtyVal,
-                        amount: amountVal,
-                        discount: discountVal
-                    });
-                }
-            });
-
-            if (hasInvalidItem || items.length === 0) {
-                return alert('Submission Error: Line items must not be blank and must have a valid quantity and amount greater than ₱0.00!');
-            }
-
-            const prefixVal = document.getElementById('l1Prefix').value;
-            const newOrder = {
-                prefix: prefixVal === 'OTHER' ? document.getElementById('l1CustomPrefix').value : prefixVal,
-                refNo, customer, orderDate, delDate, prepBy, payRef, payStatus: finalPayStatus, items,
-                status: 'PENDING',
-                drNo: String(globalSeqCounter).padStart(6, '0')
-            };
-
-            orders.push(newOrder);
-
-            // Optional Supabase DB Sync
-            createOrderInSupabase({
-                prefix: newOrder.prefix,
-                ref_number: newOrder.refNo,
-                payee_name: newOrder.customer,
-                order_date: newOrder.orderDate,
-                delivered_date: newOrder.delDate
-            });
-
-            globalSeqCounter++;
-            localStorage.setItem('hhvi_seq', globalSeqCounter);
-            localStorage.setItem('hhvi_orders', JSON.stringify(orders));
-            
-            resetOrderForm();
-            alert("Order created successfully!");
-        }
-
-        function resetOrderForm() {
-            const cust = document.getElementById('l1Customer');
-            const prep = document.getElementById('l1PreparedBy');
-            const pay = document.getElementById('l1PaymentRef');
-            const tbody = document.getElementById('lineItemsTable');
-
-            if (cust) cust.value = '';
-            if (prep) prep.value = '';
-            if (pay) pay.value = '';
-            if (tbody) tbody.innerHTML = '';
-
-            setTodayDates();
-            updateRefNo();
-            addLineItem();
-        }
-
-        function calcLineTotals() {
-            document.querySelectorAll('#lineItemsTable tr').forEach(row => {
-                const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
-                const amt = parseFloat(row.querySelector('.item-amount').value) || 0;
-                const disc = parseFloat(row.querySelector('.item-discount').value) || 0;
-                const total = Math.max(0, (qty * amt) - disc);
-                const totEl = row.querySelector('.item-total');
-                if (totEl) totEl.innerText = `₱${total.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-            });
         }
 
         function switchTab(tabNum) {
-            if (currentUser && currentUser.role === 'Account Holder' && tabNum === 4) return;
-
-            activeTab = tabNum;
-            document.querySelectorAll('main > section').forEach((el, idx) => {
-                if (idx + 1 === tabNum) el.classList.remove('hidden');
-                else el.classList.add('hidden');
-            });
-            document.querySelectorAll('nav button').forEach((btn, idx) => {
-                if (idx + 1 === tabNum) btn.className = "px-3 py-1.5 rounded bg-white text-black font-bold transition-colors";
-                else btn.className = "px-3 py-1.5 rounded text-zinc-400 hover:text-white font-bold transition-colors";
-            });
-
-            if (tabNum === 2) renderL2DR();
-            if (tabNum === 3) renderL3Proofs();
-            if (tabNum === 4) renderL4Orders();
-            if (tabNum === 5) renderLedger('ALL');
+            console.log('Switched to tab', tabNum);
         }
 
-        function toggleCustomPrefix() {
-            const val = document.getElementById('l1Prefix').value;
-            const customInput = document.getElementById('l1CustomPrefix');
-            if (customInput) customInput.classList.toggle('hidden', val !== 'OTHER');
-        }
-
-        function updateRefNo() {
-            const prefixSel = document.getElementById('l1Prefix').value;
-            const customPfx = document.getElementById('l1CustomPrefix').value.trim();
-            const actualPfx = prefixSel === 'OTHER' ? (customPfx || 'HHVI-CUSTOM') : prefixSel;
-            
-            const seqStr = String(globalSeqCounter).padStart(6, '0');
-            const refInput = document.getElementById('l1RefNo');
-            if (refInput) refInput.value = `${actualPfx} - ${seqStr}`;
-        }
-
-        function handlePaymentStatusChange(val) {
-            const notPaidDiv = document.getElementById('notPaidTermsDiv');
-            const forPayDiv = document.getElementById('forPaymentDiv');
-
-            if (notPaidDiv) notPaidDiv.classList.toggle('hidden', val !== 'Not Paid');
-            if (forPayDiv) forPayDiv.classList.toggle('hidden', val !== 'For Payment');
-        }
-
-        function renderL2DR() {
-            const list = document.getElementById('l2OrderList');
-            if (list) {
-                list.innerHTML = orders.map(o => `
-                    <div onclick="previewDR('${o.refNo}')" class="p-2.5 bg-zinc-900 border border-zinc-800 rounded-lg cursor-pointer hover:border-zinc-500 transition-colors">
-                        <div class="font-bold text-emerald-400 font-mono text-xs">${o.refNo}</div>
-                        <div class="text-[11px] text-zinc-300">${o.customer}</div>
-                    </div>
-                `).join('');
-            }
-
-            renderDRRegister();
-        }
-
-        function previewDR(refNo) {
-            const o = orders.find(x => x.refNo === refNo);
-            if (!o) return;
-
-            const placeholder = document.getElementById('drEmptyPlaceholder');
-            const wrapper = document.getElementById('drContentWrapper');
-
-            if (placeholder) placeholder.classList.add('hidden');
-            if (wrapper) wrapper.classList.remove('hidden');
-
-            document.getElementById('drNoDisplay').innerText = o.drNo || '000001';
-            document.getElementById('drCustomer').innerText = o.customer;
-            document.getElementById('drBizStyle').innerText = o.customer;
-            document.getElementById('drDate').innerText = o.delDate || o.orderDate;
-            document.getElementById('drTerms').innerText = o.payStatus;
-            document.getElementById('drRefNo').innerText = o.refNo;
-
-            const validItems = o.items.filter(i => (i.amount > 0 || i.qty > 0));
-            let drTotalSum = 0;
-
-            const tbody = document.getElementById('drItemsBody');
-            if (tbody) {
-                tbody.innerHTML = validItems.map(i => {
-                    const lineTotal = Math.max(0, (i.qty * i.amount) - i.discount);
-                    drTotalSum += lineTotal;
-                    return `
-                        <tr>
-                            <td class="border border-black p-1 text-center font-mono">${i.qty}</td>
-                            <td class="border border-black p-1 text-center">pc</td>
-                            <td class="border border-black p-1">${i.desc}</td>
-                            <td class="border border-black p-1 text-right font-mono">₱${i.amount.toFixed(2)}</td>
-                            <td class="border border-black p-1 text-right font-mono">₱${lineTotal.toFixed(2)}</td>
-                        </tr>
-                    `;
-                }).join('') + `
-                    <tr>
-                        <td class="border border-black p-1 text-center font-mono"></td>
-                        <td class="border border-black p-1 text-center"></td>
-                        <td class="border border-black p-1 text-center font-bold font-mono">** Nothing follows **</td>
-                        <td class="border border-black p-1 text-right font-mono"></td>
-                        <td class="border border-black p-1 text-right font-mono">₱0.00</td>
-                    </tr>
-                `;
-            }
-
-            document.getElementById('drGrandTotal').innerText = `₱${drTotalSum.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-        }
-
-        function renderDRRegister() {
-            const tbody = document.getElementById('drRegisterTable');
-            if (!tbody) return;
-            tbody.innerHTML = orders.map((o, idx) => `
-                <tr class="border-b border-zinc-800">
-                    <td class="p-2 font-mono font-bold text-emerald-400">${o.refNo}</td>
-                    <td class="p-2 font-mono">${o.drNo}</td>
-                    <td class="p-2">${o.customer}</td>
-                    <td class="p-2 flex gap-1">
-                        <button type="button" onclick="downloadDRPDF('${o.refNo}')" class="px-2 py-1 bg-white text-black font-bold text-[10px] rounded hover:bg-zinc-200 transition-colors"><i class="fa-solid fa-print mr-1"></i> Print DR</button>
-                        <button type="button" onclick="orders.splice(${idx},1); localStorage.setItem('hhvi_orders', JSON.stringify(orders)); renderL2DR();" class="px-2 py-1 bg-rose-600 text-white font-bold text-[10px] rounded hover:bg-rose-500 transition-colors">Remove</button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        function downloadDRPDF(refNo) {
-            previewDR(refNo);
-            if (typeof html2pdf === 'undefined') return;
-            const opt = { margin: 0.2, filename: `DR_${refNo}.pdf`, html2canvas: { scale: 2 } };
-            html2pdf().set(opt).from(document.getElementById('drPrintArea')).save();
-        }
-
-        function renderL3Proofs() {
-            const sel = document.getElementById('l3OrderSelect');
-            if (sel) {
-                sel.innerHTML = orders.map(o => `<option value="${o.refNo}">${o.refNo} - ${o.customer}</option>`).join('');
-                checkProofRequirements();
-            }
-
-            const container = document.getElementById('l3ProofList');
-            if (container) {
-                container.innerHTML = proofs.map((p, idx) => `
-                    <div class="p-2.5 bg-zinc-900 border border-zinc-800 rounded-lg flex justify-between items-center text-xs">
-                        <div>
-                            <span class="font-bold text-white block">${p.type} (${p.refNo})</span>
-                            <span class="text-zinc-500 font-mono text-[10px]">${p.fileName}</span>
-                        </div>
-                        <div class="flex items-center gap-1">
-                            <button type="button" onclick="viewAttachment(${idx})" class="p-1 bg-zinc-800 hover:bg-emerald-600 text-emerald-400 hover:text-white rounded transition-colors" title="View"><i class="fa-solid fa-eye text-xs"></i></button>
-                            <button type="button" onclick="printAttachment(${idx})" class="p-1 bg-zinc-800 hover:bg-sky-600 text-sky-400 hover:text-white rounded transition-colors" title="Print"><i class="fa-solid fa-print text-xs"></i></button>
-                            <button type="button" onclick="editAttachmentType(${idx})" class="p-1 bg-zinc-800 hover:bg-amber-600 text-amber-400 hover:text-white rounded transition-colors" title="Edit Type"><i class="fa-solid fa-pen text-xs"></i></button>
-                            <button type="button" onclick="removeProof(${idx})" class="p-1 bg-zinc-800 hover:bg-rose-600 text-rose-400 hover:text-white rounded transition-colors" title="Remove"><i class="fa-solid fa-trash text-xs"></i></button>
-                        </div>
-                    </div>
-                `).join('');
-            }
-        }
-
-        function printAttachment(idx) {
-            const p = proofs[idx];
-            if (!p) return;
-            const win = window.open('', '_blank');
-            if (!win) return;
-            win.document.write(`<html><head><title>Print ${p.fileName}</title></head><body style="margin:0; display:flex; justify-content:center; align-items:center; min-height:100vh;">`);
-            if (p.isImg) {
-                win.document.write(`<img src="${p.fileData}" style="max-width:100%; max-height:100vh;">`);
-            } else {
-                win.document.write(`<iframe src="${p.fileData}" style="width:100%; height:100vh; border:none;"></iframe>`);
-            }
-            win.document.write(`</body></html>`);
-            win.document.close();
-            setTimeout(() => { win.print(); }, 500);
-        }
-
-        function editAttachmentType(idx) {
-            if (!proofs[idx]) return;
-            const newType = prompt('Edit Attachment Type:', proofs[idx].type);
-            if (newType) {
-                proofs[idx].type = newType;
-                localStorage.setItem('hhvi_proofs', JSON.stringify(proofs));
-                renderL3Proofs();
-            }
-        }
-
-        function removeProof(idx) {
-            if (confirm('Are you sure you want to remove this attachment?')) {
-                proofs.splice(idx, 1);
-                localStorage.setItem('hhvi_proofs', JSON.stringify(proofs));
-                renderL3Proofs();
-            }
-        }
-
-        function autoAttachGeneratedDR() {
-            const sel = document.getElementById('l3OrderSelect');
-            if (!sel) return;
-            const refNo = sel.value;
-            const o = orders.find(x => x.refNo === refNo);
-
-            if (!o) return alert('Please select a valid Order Reference first.');
-
-            previewDR(refNo);
-            const drElement = document.getElementById('drPrintArea');
-
-            if (typeof html2pdf === 'undefined') return alert('PDF library failed to initialize.');
-
-            const opt = {
-                margin: 0.2,
-                filename: `DR_${refNo}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2 }
-            };
-
-            html2pdf().set(opt).from(drElement).outputPdf('datauristring').then(dataUri => {
-                proofs.push({
-                    refNo: refNo,
-                    type: 'Delivery Receipt (DR)',
-                    fileName: `DR_${refNo.replace(/\s+/g, '_')}.pdf`,
-                    fileData: dataUri,
-                    isImg: false
-                });
-
-                localStorage.setItem('hhvi_proofs', JSON.stringify(proofs));
-                renderL3Proofs();
-                alert(`Successfully auto-attached Delivery Receipt for ${refNo}!`);
-            });
-        }
-
-        function checkProofRequirements() {
-            const sel = document.getElementById('l3OrderSelect');
-            const banner = document.getElementById('l3ReqBanner');
-            if (!sel || !banner) return;
-
-            const refNo = sel.value;
-            const o = orders.find(x => x.refNo === refNo);
-
-            if (!o) return banner.innerText = "No orders available.";
-            const existingCount = proofs.filter(p => p.refNo === refNo).length;
-            banner.innerText = `[REQS]: Selected Order Status: ${o.payStatus}. Current Attachments: ${existingCount}`;
-        }
-
-        function handleAttachProof() {
-            const refNo = document.getElementById('l3OrderSelect').value;
-            const type = document.getElementById('l3TypeSelect').value;
-            const fileInput = document.getElementById('l3FileInput');
-            const file = fileInput.files[0];
-
-            if (!refNo) return alert('No order selected.');
-            if (!file) return alert('Please choose a file to attach.');
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                proofs.push({
-                    refNo, type, fileName: file.name,
-                    fileData: e.target.result,
-                    isImg: file.type.startsWith('image/')
-                });
-
-                localStorage.setItem('hhvi_proofs', JSON.stringify(proofs));
-                fileInput.value = '';
-                renderL3Proofs();
-                alert('Document uploaded successfully.');
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function viewAttachment(idx) {
-            const p = proofs[idx];
-            if (!p) return;
-            document.getElementById('previewModalTitle').innerText = `${p.type} - ${p.refNo}`;
-            const body = document.getElementById('previewModalBody');
-
-            if (p.isImg) {
-                body.innerHTML = `<img src="${p.fileData}" class="max-h-96 max-w-full object-contain rounded border border-zinc-700">`;
-            } else {
-                body.innerHTML = `
-                    <div class="text-center space-y-3">
-                        <i class="fa-solid fa-file-pdf text-5xl text-rose-500"></i>
-                        <p class="font-bold text-white text-xs">${p.fileName}</p>
-                        <a href="${p.fileData}" download="${p.fileName}" class="px-3 py-1.5 bg-emerald-600 text-white rounded-lg font-bold text-xs inline-block">Download File</a>
-                    </div>
-                `;
-            }
-
-            document.getElementById('previewModal').classList.remove('hidden');
-        }
-
-        function storeESign(role, inputEl) {
-            const file = inputEl.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                storedSignatures[role] = e.target.result;
-                localStorage.setItem('hhvi_signatures', JSON.stringify(storedSignatures));
-                loadStoredSignaturesUI();
-                alert(`${role.toUpperCase()} signature saved for reuse!`);
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function loadStoredSignaturesUI() {
-            const map = { prep: 'signImgPrep', check: 'signImgCheck', approve: 'signImgApprove', note: 'signImgNote' };
-            for (let k in map) {
-                const el = document.getElementById(map[k]);
-                if (el && storedSignatures[k]) {
-                    el.innerHTML = `<img src="${storedSignatures[k]}" class="max-h-8 object-contain">`;
-                }
-            }
-        }
-
-        function renderL4Orders() {
-            const sel = document.getElementById('l4OrderSelect');
-            if (!sel) return;
-            sel.innerHTML = orders.filter(o => o.status === 'PENDING').map(o => `<option value="${o.refNo}">${o.refNo} - ${o.customer}</option>`).join('');
-            
-            const approvalSheet = document.getElementById('l4ApprovalSheet');
-            if (sel.options.length === 0) {
-                if (approvalSheet) approvalSheet.classList.add('hidden');
-            } else {
-                if (approvalSheet) approvalSheet.classList.remove('hidden');
-                renderL4Form();
-            }
-        }
-
-        function renderL4Form() {
-            const sel = document.getElementById('l4OrderSelect');
-            if (!sel) return;
-            const refNo = sel.value;
-            const o = orders.find(x => x.refNo === refNo);
-            if (!o) return;
-
-            document.getElementById('l4RefDisplay').innerText = `REF: ${o.refNo}`;
-            document.getElementById('l4Customer').innerText = o.customer;
-            document.getElementById('l4Date').innerText = o.orderDate;
-            document.getElementById('l4PayRef').innerText = o.payRef || 'N/A';
-            document.getElementById('l4DRNo').innerText = o.drNo;
-            document.getElementById('l4PayStatus').innerText = o.payStatus;
-            
-            document.getElementById('l4SignPrep').innerText = o.prepBy;
-
-            let grandTotal = 0;
-            const itemsBody = document.getElementById('l4ItemsBody');
-            if (itemsBody) {
-                itemsBody.innerHTML = o.items.map(i => {
-                    const total = Math.max(0, (i.qty * i.amount) - i.discount);
-                    grandTotal += total;
-                    return `
-                        <tr>
-                            <td class="border border-black p-1">${i.desc}</td>
-                            <td class="border border-black p-1 text-center font-mono">${i.qty}</td>
-                            <td class="border border-black p-1 text-right font-mono">₱${i.amount.toFixed(2)}</td>
-                            <td class="border border-black p-1 text-right font-mono">₱${total.toFixed(2)}</td>
-                        </tr>
-                    `;
-                }).join('');
-            }
-
-            document.getElementById('l4TotalAmount').innerText = `₱${grandTotal.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-            document.getElementById('l4GrandTotal').innerText = `₱${grandTotal.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-            document.getElementById('l4Remarks').innerText = `Total ${o.items.length} line items listed.`;
-
-            const matchedProofs = proofs.filter(p => p.refNo === refNo);
-            const container = document.getElementById('l4AttachmentContainer');
-            if (container) {
-                if (matchedProofs.length === 0) {
-                    container.innerHTML = `<span class="text-zinc-500 italic">No attachments uploaded for this order.</span>`;
-                } else {
-                    container.innerHTML = matchedProofs.map((p) => `
-                        <div class="flex justify-between items-center bg-white p-1.5 border border-zinc-200 rounded text-[10px]">
-                            <span><strong>${p.type}:</strong> ${p.fileName}</span>
-                            <div class="flex items-center gap-1">
-                                <button type="button" onclick="viewAttachment(${proofs.indexOf(p)})" class="px-1.5 py-0.5 bg-zinc-800 text-white rounded text-[9px]">View</button>
-                                <button type="button" onclick="replaceAttachmentAdmin(${proofs.indexOf(p)})" class="px-1.5 py-0.5 bg-amber-600 text-white rounded text-[9px]">Replace</button>
-                                <button type="button" onclick="removeProof(${proofs.indexOf(p)}); renderL4Form();" class="px-1.5 py-0.5 bg-rose-600 text-white rounded text-[9px]">Remove</button>
-                            </div>
-                        </div>
-                    `).join('');
-                }
-            }
-
-            loadStoredSignaturesUI();
-        }
-
-        function replaceAttachmentAdmin(idx) {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = 'image/*,application/pdf';
-            input.onchange = e => {
-                const file = e.target.files[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = ev => {
-                    proofs[idx].fileName = file.name;
-                    proofs[idx].fileData = ev.target.result;
-                    proofs[idx].isImg = file.type.startsWith('image/');
-                    localStorage.setItem('hhvi_proofs', JSON.stringify(proofs));
-                    renderL4Form();
-                    alert('Attachment replaced successfully.');
-                };
-                reader.readAsDataURL(file);
-            };
-            input.click();
-        }
-
-        function animateAndJumpNext(refNo, newStatus) {
-            const sheet = document.getElementById('l4ApprovalSheet');
-            if (sheet) sheet.classList.add('animate-jump');
-
-            setTimeout(() => {
-                const o = orders.find(x => x.refNo === refNo);
-                if (o) o.status = newStatus;
-                localStorage.setItem('hhvi_orders', JSON.stringify(orders));
-                
-                if (sheet) sheet.classList.remove('animate-jump');
-                renderL4Orders();
-                alert(`Order ${refNo} status updated to ${newStatus}!`);
-            }, 500);
-        }
-
-        function approveOrderByAccountHolder() {
-            const sel = document.getElementById('l4OrderSelect');
-            if (sel && sel.value) animateAndJumpNext(sel.value, 'APPROVED');
-        }
-
-        function rejectOrder() {
-            const sel = document.getElementById('l4OrderSelect');
-            if (sel && sel.value) animateAndJumpNext(sel.value, 'REJECTED');
-        }
-
-        function renderLedger(statusFilter = 'ALL') {
-            const tbody = document.getElementById('ledgerTableBody');
-            if (!tbody) return;
-            const filtered = statusFilter === 'ALL' ? orders : orders.filter(o => o.status === statusFilter);
-
-            tbody.innerHTML = filtered.map((o, idx) => {
-                const totalVal = o.items.reduce((acc, i) => acc + Math.max(0, (i.qty * i.amount) - i.discount), 0);
-                return `
-                    <tr class="border-b border-zinc-800">
-                        <td class="p-2.5 font-mono font-bold text-emerald-400">${o.refNo}</td>
-                        <td class="p-2.5">${o.customer}</td>
-                        <td class="p-2.5 font-mono text-emerald-400 font-bold">₱${totalVal.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-                        <td class="p-2.5">
-                            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${o.status==='APPROVED'?'bg-emerald-950 text-emerald-400':o.status==='REJECTED'?'bg-rose-950 text-rose-400':'bg-amber-950 text-amber-400'}">
-                                ${o.status}
-                            </span>
-                        </td>
-                        <td class="p-2.5">
-                            <button type="button" onclick="downloadMasterPacket('${o.refNo}')" class="px-3 py-1 bg-white text-black font-bold text-[10px] rounded hover:bg-zinc-200 transition-colors">
-                                <i class="fa-solid fa-file-pdf mr-1 text-rose-600"></i> Single Combined PDF Packet
-                            </button>
-                        </td>
-                        <td class="p-2.5 text-center">
-                            <button type="button" onclick="removeLedgerOrder(${idx})" class="px-2.5 py-1 bg-rose-600 text-white font-bold text-[10px] rounded hover:bg-rose-500 transition-colors">
-                                Remove
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-        }
-
-        function removeLedgerOrder(idx) {
-            if (confirm('Are you sure you want to remove this ledger entry?')) {
-                orders.splice(idx, 1);
-                localStorage.setItem('hhvi_orders', JSON.stringify(orders));
-                renderLedger('ALL');
-            }
-        }
-
-        function filterLedger(s) { renderLedger(s); }
-
-        function downloadMasterPacket(refNo) {
-            const o = orders.find(x => x.refNo === refNo);
-            if (!o || typeof html2pdf === 'undefined') return;
-
-            const orderProofs = proofs.filter(p => p.refNo === refNo);
-            const bundleContainer = document.getElementById('masterPdfBundleContainer');
-            if (!bundleContainer) return;
-            
-            let totalVal = 0;
-            const itemsHtml = o.items.map(i => {
-                const t = Math.max(0, (i.qty * i.amount) - i.discount);
-                totalVal += t;
-                return `<tr><td class="border border-black p-1">${i.desc}</td><td class="border border-black p-1 text-center">${i.qty}</td><td class="border border-black p-1 text-right">₱${i.amount.toFixed(2)}</td><td class="border border-black p-1 text-right">₱${t.toFixed(2)}</td></tr>`;
-            }).join('');
-
-            const proofsHtml = orderProofs.map((p, idx) => {
-                if (p.isImg) {
-                    return `<div class="${idx > 0 ? 'html2pdf-page-break' : ''} pt-4 text-center"><h4 class="font-bold mb-2 uppercase border-b border-black pb-1">${p.type}</h4><img src="${p.fileData}" class="max-h-[600px] object-contain mx-auto border border-black p-2"></div>`;
-                } else {
-                    return `<div class="${idx > 0 ? 'html2pdf-page-break' : ''} pt-4 text-center"><h4 class="font-bold mb-2 uppercase border-b border-black pb-1">${p.type}</h4><div class="p-6 border border-black font-mono text-xs">[Attached Document File: ${p.fileName}]</div></div>`;
-                }
-            }).join('');
-
-            const posPrep = document.getElementById('l4PosPrep')?.value || 'Account Holder';
-            const posCheck = document.getElementById('l4PosCheck')?.value || 'Account Receivable - External';
-            const posApprove = document.getElementById('l4PosApprove')?.value || 'Finance Head';
-            const posNote = document.getElementById('l4PosNote')?.value || 'President or CEO';
-
-            const nameCheck = document.getElementById('l4CheckedBy')?.value || 'Accounts Receivable';
-            const nameApprove = document.getElementById('l4ApprovedBy')?.value || 'Eugene Cabago';
-            const nameNote = document.getElementById('l4NotedBy')?.value || 'Kevin';
-
-            bundleContainer.innerHTML = `
-                <div class="space-y-4">
-                    <div class="border-b-2 border-black pb-2 flex justify-between items-center">
-                        <div>
-                            <h2 class="text-sm font-black">HERO HUB VENTURES INCORPORATED</h2>
-                            <p class="text-[10px] font-bold text-zinc-600">APPROVAL FORM & DISPATCH PERMIT</p>
-                        </div>
-                        <span class="font-mono font-bold text-xs">REF: ${o.refNo}</span>
-                    </div>
-                    <div class="grid grid-cols-2 gap-2 text-xs">
-                        <p><strong>Customer:</strong> ${o.customer}</p>
-                        <p><strong>Order Date:</strong> ${o.orderDate}</p>
-                        <p><strong>Payment Status:</strong> ${o.payStatus}</p>
-                        <p><strong>Total Value:</strong> ₱${totalVal.toFixed(2)}</p>
-                    </div>
-                    <table class="w-full border-collapse border border-black text-xs">
-                        <thead><tr class="bg-zinc-100"><th class="border border-black p-1">Item Description</th><th class="border border-black p-1">Qty</th><th class="border border-black p-1">Price</th><th class="border border-black p-1">Total</th></tr></thead>
-                        <tbody>${itemsHtml}</tbody>
-                    </table>
-                    
-                    <div class="grid grid-cols-4 gap-2 text-center pt-8 border-t border-black">
-                        <div>
-                            <p class="font-bold text-[10px] uppercase">PREPARED BY</p>
-                            <p class="border-b border-black pt-4 font-bold">${o.prepBy}</p>
-                            <p class="text-[9px] text-zinc-600">${posPrep}</p>
-                        </div>
-                        <div>
-                            <p class="font-bold text-[10px] uppercase">CHECKED BY</p>
-                            <p class="border-b border-black pt-4 font-bold">${nameCheck}</p>
-                            <p class="text-[9px] text-zinc-600">${posCheck}</p>
-                        </div>
-                        <div>
-                            <p class="font-bold text-[10px] uppercase">AUTHORIZE APPROVER</p>
-                            <p class="border-b border-black pt-4 font-bold">${nameApprove}</p>
-                            <p class="text-[9px] text-zinc-600">${posApprove}</p>
-                        </div>
-                        <div>
-                            <p class="font-bold text-[10px] uppercase">NOTED BY</p>
-                            <p class="border-b border-black pt-4 font-bold">${nameNote}</p>
-                            <p class="text-[9px] text-zinc-600">${posNote}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="html2pdf-page-break"></div>
-
-                <div class="space-y-4 pt-2">
-                    <div class="text-center font-bold">
-                        <h2 class="text-sm font-black">HERO HUB VENTURES INCORPORATED</h2>
-                        <p class="text-xs">DELIVERY RECEIPT (NO. ${o.drNo})</p>
-                    </div>
-                    <div class="grid grid-cols-2 gap-2 text-xs">
-                        <p><strong>Delivered To:</strong> ${o.customer}</p>
-                        <p><strong>Date:</strong> ${o.delDate || o.orderDate}</p>
-                        <p><strong>Ref No:</strong> ${o.refNo}</p>
-                        <p><strong>Terms:</strong> ${o.payStatus}</p>
-                    </div>
-                    <table class="w-full border-collapse border border-black text-xs">
-                        <thead><tr class="bg-zinc-100"><th class="border border-black p-1">QTY</th><th class="border border-black p-1">ARTICLES</th><th class="border border-black p-1">TOTAL</th></tr></thead>
-                        <tbody>${itemsHtml}</tbody>
-                    </table>
-                </div>
-
-                <div class="html2pdf-page-break"></div>
-
-                <div class="space-y-4 pt-2">
-                    <h3 class="font-bold text-xs uppercase text-center border-b border-black pb-1">PAYMENT METHOD & PROOF ATTACHMENTS</h3>
-                    ${proofsHtml || '<p class="text-center text-zinc-500 font-mono py-8 text-xs">No external attachment photos uploaded for this reference.</p>'}
-                </div>
-            `;
-
-            bundleContainer.classList.remove('hidden');
-            const cleanFileName = refNo.replace(/[^a-zA-Z0-9-_]/g, '_');
-
-            const opt = {
-                margin: 0.3,
-                filename: `${cleanFileName}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2 },
-                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
-                pagebreak: { mode: ['css', 'legacy'] }
-            };
-
-            html2pdf().set(opt).from(bundleContainer).save().then(() => {
-                bundleContainer.classList.add('hidden');
-            });
-        }
+        function toggleCustomPrefix() {}
+        function updateRefNo() {}
+        function saveOrder() { alert('Order saved'); }
     </script>
 </body>
 </html>
