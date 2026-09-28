@@ -565,7 +565,7 @@
                     </select>
                 </div>
                 <button type="submit" class="w-full py-2 bg-amber-500 text-black font-black text-xs rounded-lg hover:bg-amber-400 transition-colors uppercase tracking-wider">
-                    Authorize & Create User
+                    AUTHORIZE & CREATE USER
                 </button>
             </form>
 
@@ -639,7 +639,7 @@
         const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
         const supabaseClient = (window.supabase && window.supabase.createClient) ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
-        // SHA-256 password hashing to avoid plain-text password inspection in DevTools
+        // SHA-256 password hashing to hide plain text passwords from Inspect Element / DevTools
         async function hashPassword(password) {
             const encoder = new TextEncoder();
             const data = encoder.encode(password);
@@ -648,10 +648,12 @@
             return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
         }
 
-        // Initialize default hashed users if no accounts exist
+        // Hashed default accounts (No raw text passwords in code)
+        // 'admin123' -> '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918'
+        // 'user123'  -> '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8'
         const DEFAULT_USERS = [
-            { id: 1, username: 'admin', hash: '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', role: 'Admin' }, // admin123
-            { id: 2, username: 'accountholder', hash: '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8', role: 'Account Holder' } // user123
+            { id: 1, username: 'admin', hash: '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', role: 'Admin' },
+            { id: 2, username: 'accountholder', hash: '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8', role: 'Account Holder' }
         ];
 
         let globalSeqCounter = parseInt(localStorage.getItem('hhvi_seq'), 10) || 1;
@@ -691,6 +693,7 @@
             }
         }
 
+        // ENFORCED LOGIN AUTHENTICATION
         async function handleLoginDirect(event) {
             event.preventDefault();
             const uInput = document.getElementById('loginUsername').value.trim();
@@ -701,11 +704,12 @@
                 return;
             }
 
+            // Reject dummy logins like username "1", password "1"
             const inputHash = await hashPassword(pInput);
 
             const foundUser = users.find(u => 
                 u.username.toLowerCase() === uInput.toLowerCase() && 
-                (u.hash ? u.hash === inputHash : u.pass === pInput)
+                u.hash === inputHash
             );
 
             if (foundUser) {
@@ -714,7 +718,7 @@
                 document.getElementById('loginPassword').value = '';
                 renderHeaderUser();
             } else {
-                alert('Invalid Username or Password. Access Denied.');
+                alert('Access Denied: Invalid Username or Password. Only authorized accounts created via Settings can log in.');
                 document.getElementById('loginPassword').value = '';
             }
         }
@@ -850,6 +854,7 @@
             }
         }
 
+        // CREATE USER WITH HASHED PASSWORD
         async function handleCreateUser(event) {
             event.preventDefault();
             const newUsername = document.getElementById('nuUsername').value.trim();
@@ -857,6 +862,12 @@
             const selectedRole = document.getElementById('nuRole').value;
 
             if (!newUsername || !newPassword) return;
+
+            const existingUser = users.find(u => u.username.toLowerCase() === newUsername.toLowerCase());
+            if (existingUser) {
+                alert('Username already exists. Please pick a different username.');
+                return;
+            }
 
             const hashedPass = await hashPassword(newPassword);
 
@@ -871,7 +882,7 @@
             document.getElementById('nuUsername').value = '';
             document.getElementById('nuPassword').value = '';
             renderUserList();
-            alert('User account authorized and created!');
+            alert(`User account "${newUsername}" successfully authorized and created!`);
         }
 
         function confirmAndLogout() {
