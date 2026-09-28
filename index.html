@@ -9,47 +9,6 @@
     <!-- External Dependencies -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        // 1. Initialize Supabase Client
-const SUPABASE_URL = 'https://YOUR_PROJECT_REF.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxmcXdnaGRyaXJxY2J6a3VmZHJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MDgwNDQsImV4cCI6MjEwNjE4NDA0NH0.fF-dqbanaH_uHqHPlMDEiyfJj2qLFEg5TTW0mv4m9wc';
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-// 2. Example: Save an Order directly from GitHub Pages
-async function createOrder(orderData) {
-  const { data, error } = await supabase
-    .from('hhvi_orders')
-    .insert([
-      {
-        prefix: orderData.prefix,
-        ref_number: orderData.refNumber,
-        payee_name: orderData.payeeName,
-        order_date: orderData.orderDate,
-        delivered_date: orderData.deliveredDate
-      }
-    ]);
-
-  if (error) {
-    console.error('Error saving order:', error.message);
-    alert('Failed to create order: ' + error.message);
-  } else {
-    console.log('Order created successfully:', data);
-    alert('Order saved!');
-  }
-}
-
-// 3. Example: Fetch all orders to display in UI
-async function loadOrders() {
-  const { data: orders, error } = await supabase
-    .from('hhvi_orders')
-    .select('*');
-
-  if (error) {
-    console.error('Error fetching orders:', error.message);
-  } else {
-    console.log('Fetched Orders:', orders);
-    // Render orders into your table/UI here
-  }
-}
         tailwind.config = {
             darkMode: 'class'
         }
@@ -675,6 +634,11 @@ async function loadOrders() {
 
     <!-- APPLICATION LOGIC -->
     <script>
+        // Supabase Setup Safe Initialization
+        const SUPABASE_URL = 'https://YOUR_PROJECT_REF.supabase.co';
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+        const supabaseClient = (window.supabase && window.supabase.createClient) ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
         // SHA-256 password hashing to avoid plain-text password inspection in DevTools
         async function hashPassword(password) {
             const encoder = new TextEncoder();
@@ -714,6 +678,19 @@ async function loadOrders() {
             loadStoredSignaturesUI();
         };
 
+        async function createOrderInSupabase(orderData) {
+            if (!supabaseClient) return;
+            const { data, error } = await supabaseClient
+                .from('hhvi_orders')
+                .insert([orderData]);
+
+            if (error) {
+                console.error('Error saving order to Supabase:', error.message);
+            } else {
+                console.log('Order created successfully in Supabase:', data);
+            }
+        }
+
         async function handleLoginDirect(event) {
             event.preventDefault();
             const uInput = document.getElementById('loginUsername').value.trim();
@@ -726,7 +703,6 @@ async function loadOrders() {
 
             const inputHash = await hashPassword(pInput);
 
-            // Strict user validation check against registered users
             const foundUser = users.find(u => 
                 u.username.toLowerCase() === uInput.toLowerCase() && 
                 (u.hash ? u.hash === inputHash : u.pass === pInput)
@@ -792,6 +768,20 @@ async function loadOrders() {
                     if (pcEl) pcEl.innerText = 'HHVI-WORKSTATION';
                     if (locEl) locEl.innerText = 'San Juan, Metro Manila, PH';
                 });
+        }
+
+        function renderUserList() {
+            const list = document.getElementById('userAccountList');
+            if (!list) return;
+            list.innerHTML = users.map((u, idx) => `
+                <div class="flex justify-between items-center bg-black p-2.5 rounded-lg text-xs border border-zinc-800">
+                    <div class="flex flex-col">
+                        <span class="text-white font-bold">${u.username} <span class="text-amber-400 font-mono text-[10px]">(${u.role})</span></span>
+                        <span class="text-zinc-500 font-mono text-[10px] flex items-center gap-1"><i class="fa-solid fa-shield-halved text-[9px] text-emerald-400"></i> Encrypted Credential</span>
+                    </div>
+                    ${u.username !== 'admin' ? `<button type="button" onclick="users.splice(${idx},1); localStorage.setItem('hhvi_users', JSON.stringify(users)); renderUserList();" class="text-rose-500 hover:text-rose-400 font-bold p-1"><i class="fa-solid fa-trash text-xs"></i></button>` : ''}
+                </div>
+            `).join('');
         }
 
         function toggleUserModal(show) {
@@ -1111,10 +1101,23 @@ async function loadOrders() {
                 return alert('Submission Error: Line items must not be blank and must have a valid quantity and amount greater than ₱0.00!');
             }
 
-            orders.push({
+            const prefixVal = document.getElementById('l1Prefix').value;
+            const newOrder = {
+                prefix: prefixVal === 'OTHER' ? document.getElementById('l1CustomPrefix').value : prefixVal,
                 refNo, customer, orderDate, delDate, prepBy, payRef, payStatus: finalPayStatus, items,
                 status: 'PENDING',
                 drNo: String(globalSeqCounter).padStart(6, '0')
+            };
+
+            orders.push(newOrder);
+
+            // Optional Supabase DB Sync
+            createOrderInSupabase({
+                prefix: newOrder.prefix,
+                ref_number: newOrder.refNo,
+                payee_name: newOrder.customer,
+                order_date: newOrder.orderDate,
+                delivered_date: newOrder.delDate
             });
 
             globalSeqCounter++;
@@ -1737,20 +1740,6 @@ async function loadOrders() {
             html2pdf().set(opt).from(bundleContainer).save().then(() => {
                 bundleContainer.classList.add('hidden');
             });
-        }
-
-        function renderUserList() {
-            const list = document.getElementById('userAccountList');
-            if (!list) return;
-            list.innerHTML = users.map((u, idx) => `
-                <div class="flex justify-between items-center bg-black p-2.5 rounded-lg text-xs border border-zinc-800">
-                    <div class="flex flex-col">
-                        <span class="text-white font-bold">${u.username} <span class="text-amber-400 font-mono text-[10px]">(${u.role})</span></span>
-                        <span class="text-zinc-500 font-mono text-[10px] flex items-center gap-1"><i class="fa-solid fa-shield-halved text-[9px] text-emerald-400"></i> Encrypted Credential</span>
-                    </div>
-                    ${u.username !== 'admin' ? `<button type="button" onclick="users.splice(${idx},1); localStorage.setItem('hhvi_users', JSON.stringify(users)); renderUserList();" class="text-rose-500 hover:text-rose-400 font-bold p-1"><i class="fa-solid fa-trash text-xs"></i></button>` : ''}
-                </div>
-            `).join('');
         }
     </script>
 </body>
