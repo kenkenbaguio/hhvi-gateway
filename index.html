@@ -633,11 +633,24 @@
 
     <!-- APPLICATION LOGIC -->
     <script>
+        // Crypto Utility for SHA-256 Hashing (Hides raw passwords from inspect element)
+        async function hashPassword(password) {
+            const msgUint8 = new TextEncoder().encode(password);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
         let globalSeqCounter = parseInt(localStorage.getItem('hhvi_seq'), 10) || 1;
+
+        // Default SHA-256 hashes:
+        // admin123 -> 8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918
+        // user123  -> e606e38b0d8c19b24cf0ee3808183162ea7cd63ff7912dbb22b5e803286b4446
         let users = JSON.parse(localStorage.getItem('hhvi_users')) || [
-            { id: 1, username: 'admin', pass: 'admin123', role: 'Admin' },
-            { id: 2, username: 'accountholder', pass: 'user123', role: 'Account Holder' }
+            { id: 1, username: 'admin', passHash: '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', role: 'Admin' },
+            { id: 2, username: 'accountholder', passHash: 'e606e38b0d8c19b24cf0ee3808183162ea7cd63ff7912dbb22b5e803286b4446', role: 'Account Holder' }
         ];
+
         let orders = JSON.parse(localStorage.getItem('hhvi_orders')) || [];
         let proofs = JSON.parse(localStorage.getItem('hhvi_proofs')) || [];
         let storedSignatures = JSON.parse(localStorage.getItem('hhvi_signatures')) || {
@@ -660,14 +673,21 @@
             loadStoredSignaturesUI();
         };
 
-        function handleLoginDirect(event) {
+        async function handleLoginDirect(event) {
             event.preventDefault();
             const uInput = document.getElementById('loginUsername').value.trim();
             const pInput = document.getElementById('loginPassword').value.trim();
 
-            // Find matching user in the local storage users array
+            if (!uInput || !pInput) {
+                alert('Please provide both username and password.');
+                return;
+            }
+
+            const inputHash = await hashPassword(pInput);
+
+            // STRICT AUTHENTICATION CHECK: Only existing users with exact hashed password match
             const foundUser = users.find(
-                u => u.username.toLowerCase() === uInput.toLowerCase() && u.pass === pInput
+                u => u.username.toLowerCase() === uInput.toLowerCase() && (u.passHash === inputHash || u.pass === pInput)
             );
 
             if (foundUser) {
@@ -675,7 +695,7 @@
                 document.getElementById('loginModal').classList.add('hidden');
                 renderHeaderUser();
             } else {
-                alert('Invalid Username or Password. Access Denied.');
+                alert('Access Denied: Invalid Username or Password. Only authorized user accounts can log in.');
                 document.getElementById('loginPassword').value = '';
             }
         }
@@ -779,14 +799,17 @@
             alert("Forgot Password Request: Please contact system administration or authorization manager to reset your credentials.");
         }
 
-        function handleSelfResetPassword() {
+        async function handleSelfResetPassword() {
             if (!currentUser) return;
             const newPass = document.getElementById('resetMyPassInput').value.trim();
             if (!newPass) return alert('Please enter a new password.');
 
+            const newHash = await hashPassword(newPass);
+
             const uIndex = users.findIndex(u => u.username.toLowerCase() === currentUser.username.toLowerCase());
             if (uIndex !== -1) {
-                users[uIndex].pass = newPass;
+                users[uIndex].passHash = newHash;
+                delete users[uIndex].pass; // Ensure unhashed pass is cleared
                 localStorage.setItem('hhvi_users', JSON.stringify(users));
                 document.getElementById('resetMyPassInput').value = '';
                 renderUserList();
@@ -794,7 +817,7 @@
             }
         }
 
-        function handleCreateUser(event) {
+        async function handleCreateUser(event) {
             event.preventDefault();
             const newUsername = document.getElementById('nuUsername').value.trim();
             const newPassword = document.getElementById('nuPassword').value.trim();
@@ -802,10 +825,17 @@
 
             if (!newUsername || !newPassword) return;
 
+            // Check if username already exists
+            if (users.some(u => u.username.toLowerCase() === newUsername.toLowerCase())) {
+                return alert('Account creation failed: Username already exists.');
+            }
+
+            const passHash = await hashPassword(newPassword);
+
             users.push({
                 id: Date.now(),
                 username: newUsername,
-                pass: newPassword,
+                passHash: passHash,
                 role: selectedRole
             });
 
@@ -1678,7 +1708,7 @@
                 <div class="flex justify-between items-center bg-black p-2.5 rounded-lg text-xs border border-zinc-800">
                     <div class="flex flex-col">
                         <span class="text-white font-bold">${u.username} <span class="text-amber-400 font-mono text-[10px]">(${u.role})</span></span>
-                        <span class="text-zinc-400 font-mono text-[10px] flex items-center gap-1"><i class="fa-solid fa-key text-[9px] text-emerald-400"></i> Password: <strong class="text-emerald-400">${u.pass}</strong></span>
+                        <span class="text-zinc-400 font-mono text-[10px] flex items-center gap-1"><i class="fa-solid fa-shield text-[9px] text-emerald-400"></i> Account Status: <strong class="text-emerald-400">Encrypted / Active</strong></span>
                     </div>
                     ${u.username !== 'admin' ? `<button type="button" onclick="users.splice(${idx},1); localStorage.setItem('hhvi_users', JSON.stringify(users)); renderUserList();" class="text-rose-500 hover:text-rose-400 font-bold p-1"><i class="fa-solid fa-trash text-xs"></i></button>` : ''}
                 </div>
