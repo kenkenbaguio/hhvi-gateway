@@ -760,32 +760,14 @@
             const uInput = document.getElementById('loginUsername').value.trim();
             const pInput = document.getElementById('loginPassword').value.trim();
 
-            try {
-                const response = await fetch('/api/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: uInput, password: pInput })
-                });
-
-                const result = await response.json();
-
-                if (response.ok && result.success) {
-                    currentUser = result.user;
-                    document.getElementById('loginModal').classList.add('hidden');
-                    renderHeaderUser();
-                } else {
-                    alert(result.message || 'Access Denied');
-                    document.getElementById('loginPassword').value = '';
-                }
-            } catch (err) {
-                const found = users.find(u => u.username.toLowerCase() === uInput.toLowerCase() && u.pass === pInput);
-                if (found) {
-                    currentUser = { username: found.username, role: found.role };
-                } else {
-                    currentUser = { username: uInput, role: 'Admin' };
-                }
+            const found = users.find(u => u.username.toLowerCase() === uInput.toLowerCase() && u.pass === pInput);
+            if (found) {
+                currentUser = { username: found.username, role: found.role };
                 document.getElementById('loginModal').classList.add('hidden');
                 renderHeaderUser();
+            } else {
+                alert('Invalid Username or Password.');
+                document.getElementById('loginPassword').value = '';
             }
         }
 
@@ -1068,7 +1050,7 @@
             localStorage.setItem('hhvi_orders', JSON.stringify(orders));
             
             resetOrderForm();
-            alert("Congratulation and generated number is succesfull save.");
+            alert("Congratulations! Order has been saved successfully.");
         }
 
         function resetOrderForm() {
