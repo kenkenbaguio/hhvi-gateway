@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
         @keyframes jumpSlide {
@@ -546,31 +547,10 @@
                 </div>
             </div>
 
-            <form onsubmit="handleCreateUser(event)" class="space-y-3 text-xs border-t border-zinc-800 pt-3">
-                <h4 class="text-xs font-bold text-zinc-300 uppercase">Authorize New User</h4>
-                <div>
-                    <label class="block text-zinc-400 font-bold mb-1">Username</label>
-                    <input type="text" id="nuUsername" placeholder="New Account Username" required class="w-full bg-black border border-zinc-700 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-amber-500">
-                </div>
-                <div>
-                    <label class="block text-zinc-400 font-bold mb-1">Initial Password</label>
-                    <input type="password" id="nuPassword" placeholder="Initial Password" required class="w-full bg-black border border-zinc-700 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-amber-500">
-                </div>
-                <div>
-                    <label class="block text-zinc-400 font-bold mb-1">Account Role</label>
-                    <select id="nuRole" class="w-full bg-black border border-zinc-700 rounded-lg p-2 text-xs text-white focus:outline-none">
-                        <option value="Admin">Admin</option>
-                        <option value="Account Holder">Account Holder</option>
-                    </select>
-                </div>
-                <button type="submit" class="w-full py-2 bg-amber-500 text-black font-black text-xs rounded-lg hover:bg-amber-400 transition-colors uppercase tracking-wider">
-                    Authorize & Create User
-                </button>
-            </form>
-
-            <div class="border-t border-zinc-800 pt-3">
-                <h4 class="text-xs font-bold text-zinc-400 mb-2 uppercase">Authorized System Accounts</h4>
-                <div id="userAccountList" class="space-y-1.5 max-h-40 overflow-y-auto"></div>
+            <div class="border-t border-zinc-800 pt-3 text-[11px] text-zinc-400 leading-relaxed">
+                <h4 class="text-xs font-bold text-zinc-300 mb-1 uppercase">Managing Users</h4>
+                Accounts are managed in Supabase (Authentication &rarr; Users). Roles are read from each account&rsquo;s
+                <span class="font-mono text-amber-400">app_metadata.role</span> (<span class="font-mono">Admin</span> or <span class="font-mono">Account Holder</span>).
             </div>
         </div>
     </div>
@@ -604,12 +584,12 @@
 
                 <form onsubmit="handleLoginDirect(event)" class="space-y-4 text-left pt-2">
                     <div>
-                        <label for="loginUsername" class="text-[10px] sm:text-xs font-bold text-zinc-400 uppercase tracking-wider block mb-1">Username</label>
-                        <input type="text" id="loginUsername" required class="w-full bg-black border border-zinc-700 rounded-lg p-2.5 text-xs text-white focus:border-emerald-500 focus:outline-none transition-colors">
+                        <label for="loginUsername" class="text-[10px] sm:text-xs font-bold text-zinc-400 uppercase tracking-wider block mb-1">Email</label>
+                        <input type="email" id="loginUsername" autocomplete="email" required class="w-full bg-black border border-zinc-700 rounded-lg p-2.5 text-xs text-white focus:border-emerald-500 focus:outline-none transition-colors">
                     </div>
                     <div>
                         <label for="loginPassword" class="text-[10px] sm:text-xs font-bold text-zinc-400 uppercase tracking-wider block mb-1">Password</label>
-                        <input type="password" id="loginPassword" required class="w-full bg-black border border-zinc-700 rounded-lg p-2.5 text-xs text-white focus:border-emerald-500 focus:outline-none transition-colors">
+                        <input type="password" id="loginPassword" autocomplete="current-password" required class="w-full bg-black border border-zinc-700 rounded-lg p-2.5 text-xs text-white focus:border-emerald-500 focus:outline-none transition-colors">
                     </div>
                     
                     <div class="flex justify-between items-center text-[10px] sm:text-xs pt-0.5">
@@ -633,40 +613,43 @@
 
     <!-- APPLICATION LOGIC -->
     <script>
-    // 1. Initialize Supabase Client
-    const SUPABASE_URL = 'https://lfqwghdrirqcbzkufdrq.supabase.co';
-    const SUPABASE_ANON_KEY = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxmcXdnaGRyaXJxY2J6a3VmZHJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MDgwNDQsImV4cCI6MjEwNjE4NDA0NH0.fF-dqbanaH_uHqHPlMDEiyfJj2qLFEg5TTW0mv4m9wc; sb_publishable_nPVZtZVkG2n5fkzYjoqIJw_mrAtBLkr
-    const supabaseClient = supabase.createClient(https://lfqwghdrirqcbzkufdrq.supabase.co, eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxmcXdnaGRyaXJxY2J6a3VmZHJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MDgwNDQsImV4cCI6MjEwNjE4NDA0NH0.fF-dqbanaH_uHqHPlMDEiyfJj2qLFEg5TTW0mv4m9wc);
+        // ---------- 1. Supabase client (anon key is public by design; keep Row Level Security ON) ----------
+        const SUPABASE_URL = 'https://lfqwghdrirqcbzkufdrq.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxmcXdnaGRyaXJxY2J6a3VmZHJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MDgwNDQsImV4cCI6MjEwNjE4NDA0NH0.fF-dqbanaH_uHqHPlMDEiyfJj2qLFEg5TTW0mv4m9wc';
 
-    // 2. Real Supabase Authentication
-    document.getElementById('loginForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const emailInput = document.getElementById('loginUsername').value.trim();
-        const passwordInput = document.getElementById('loginPassword').value.trim();
-
-        // Send login credentials directly to Supabase Server
-        const { data, error } = await supabaseClient.auth.signInWithPassword({
-            email: emailInput,
-            password: passwordInput
-        });
-
-        if (error) {
-            alert('Login Failed: ' + error.message);
-            return;
+        let supabaseClient = null;
+        try {
+            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        } catch (err) {
+            console.error('Supabase failed to initialise:', err);
         }
 
-        // Successful Login
-        alert('Login successful!');
-        document.getElementById('loginModal').classList.add('hidden');
-        document.getElementById('appContent').classList.remove('hidden');
-        document.getElementById('appContent').classList.add('flex');
-        
-        // Display current user email
-        document.getElementById('userHeader').innerText = data.user.email;
-    });
-</script>
+        // ---------- 2. App state ----------
+        function loadJSON(key, fallback) {
+            try {
+                const raw = localStorage.getItem(key);
+                return raw ? JSON.parse(raw) : fallback;
+            } catch (err) {
+                console.warn('Could not read "' + key + '" from storage:', err);
+                return fallback;
+            }
+        }
+
+        let currentTheme = localStorage.getItem('hhvi_theme') || 'dark';
+        let currentUser = null;
+        let activeTab = 1;
+        let orders = loadJSON('hhvi_orders', []);
+        let proofs = loadJSON('hhvi_proofs', []);
+        let storedSignatures = loadJSON('hhvi_signatures', {});
+        let storeItemsCatalog = loadJSON('hhvi_catalog', []);
+        let globalSeqCounter = parseInt(localStorage.getItem('hhvi_seq'), 10) || 1;
+        let searchDebounceTimer = null;
+
+        // ---------- 3. Startup ----------
         window.onload = function() {
+            // The old local login kept passwords in plain text in this browser; it is retired now.
+            localStorage.removeItem('hhvi_users');
+
             applyTheme(currentTheme);
             setTodayDates();
             autoLoadCSVProducts();
@@ -675,6 +658,7 @@
             fetchRealLocationAndIP();
             addLineItem();
             loadStoredSignaturesUI();
+            initAuth();
         };
 
         function toggleTheme() {
@@ -733,7 +717,6 @@
             if (modal) {
                 if (show) {
                     modal.classList.remove('hidden');
-                    renderUserList();
                 } else {
                     modal.classList.add('hidden');
                 }
@@ -772,19 +755,73 @@
             applyRoleRestrictions();
         }
 
+        // ---------- Authentication (Supabase) ----------
+        function normaliseRole(user) {
+            // app_metadata can only be changed server-side, so it is safe to trust for roles.
+            const raw = (user.app_metadata && user.app_metadata.role) || '';
+            return String(raw).trim().toLowerCase() === 'admin' ? 'Admin' : 'Account Holder';
+        }
+
+        function startSession(user) {
+            currentUser = {
+                id: user.id,
+                username: user.email,
+                role: normaliseRole(user)
+            };
+            document.getElementById('loginModal').classList.add('hidden');
+            renderHeaderUser();
+            switchTab(1);
+        }
+
+        function showLogin() {
+            document.getElementById('loginModal').classList.remove('hidden');
+            document.getElementById('loginUsername').value = '';
+            document.getElementById('loginPassword').value = '';
+            renderHeaderUser();
+        }
+
+        async function initAuth() {
+            if (!supabaseClient) return;
+
+            supabaseClient.auth.onAuthStateChange((event) => {
+                if (event === 'SIGNED_OUT' && currentUser) {
+                    currentUser = null;
+                    showLogin();
+                }
+            });
+
+            // Restore an existing session after a page refresh
+            const { data, error } = await supabaseClient.auth.getSession();
+            if (error) console.warn('Could not restore session:', error.message);
+            if (data && data.session && data.session.user) startSession(data.session.user);
+        }
+
         async function handleLoginDirect(event) {
             event.preventDefault();
-            const uInput = document.getElementById('loginUsername').value.trim();
-            const pInput = document.getElementById('loginPassword').value.trim();
 
-            const found = users.find(u => u.username.toLowerCase() === uInput.toLowerCase() && u.pass === pInput);
-            if (found) {
-                currentUser = { username: found.username, role: found.role };
-                document.getElementById('loginModal').classList.add('hidden');
-                renderHeaderUser();
-            } else {
-                alert('Invalid Username or Password.');
-                document.getElementById('loginPassword').value = '';
+            if (!supabaseClient) {
+                return alert('The login service failed to load. Check your internet connection and refresh the page.');
+            }
+
+            const email = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const submitBtn = event.target.querySelector('button[type="submit"]');
+
+            if (submitBtn) { submitBtn.disabled = true; submitBtn.classList.add('opacity-60'); }
+
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+                if (error) {
+                    alert('Login Failed: ' + error.message);
+                    document.getElementById('loginPassword').value = '';
+                    return;
+                }
+                startSession(data.user);
+            } catch (err) {
+                alert('Login Failed: ' + (err.message || 'Network error. Please try again.'));
+            } finally {
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.classList.remove('opacity-60'); }
             }
         }
 
@@ -792,52 +829,28 @@
             alert("Forgot Password Request: Please contact system administration or authorization manager to reset your credentials.");
         }
 
-        function handleSelfResetPassword() {
-            if (!currentUser) return;
+        async function handleSelfResetPassword() {
+            if (!currentUser || !supabaseClient) return;
             const newPass = document.getElementById('resetMyPassInput').value.trim();
             if (!newPass) return alert('Please enter a new password.');
 
-            const uIndex = users.findIndex(u => u.username.toLowerCase() === currentUser.username.toLowerCase());
-            if (uIndex !== -1) {
-                users[uIndex].pass = newPass;
-                localStorage.setItem('hhvi_users', JSON.stringify(users));
-                document.getElementById('resetMyPassInput').value = '';
-                renderUserList();
-                alert('Your password has been reset successfully!');
-            }
+            const { error } = await supabaseClient.auth.updateUser({ password: newPass });
+            if (error) return alert('Could not update password: ' + error.message);
+
+            document.getElementById('resetMyPassInput').value = '';
+            alert('Your password has been updated successfully!');
         }
 
-        function handleCreateUser(event) {
-            event.preventDefault();
-            const newUsername = document.getElementById('nuUsername').value.trim();
-            const newPassword = document.getElementById('nuPassword').value.trim();
-            const selectedRole = document.getElementById('nuRole').value;
+        async function confirmAndLogout() {
+            if (!confirm("Are you sure you want to log out? Any unsaved order data will be cleared.")) return;
 
-            if (!newUsername || !newPassword) return;
-
-            users.push({
-                id: Date.now(),
-                username: newUsername,
-                pass: newPassword,
-                role: selectedRole
-            });
-
-            localStorage.setItem('hhvi_users', JSON.stringify(users));
-            document.getElementById('nuUsername').value = '';
-            document.getElementById('nuPassword').value = '';
-            renderUserList();
-            alert('User account authorized and created!');
-        }
-
-        function confirmAndLogout() {
-            if (confirm("Are you sure you want to log out? Any unsaved order data will be cleared.")) {
-                resetOrderForm();
-                currentUser = null;
-                document.getElementById('loginModal').classList.remove('hidden');
-                document.getElementById('loginUsername').value = '';
-                document.getElementById('loginPassword').value = '';
-                renderHeaderUser();
+            resetOrderForm();
+            if (supabaseClient) {
+                const { error } = await supabaseClient.auth.signOut();
+                if (error) console.warn('Sign-out warning:', error.message);
             }
+            currentUser = null;
+            showLogin();
         }
 
         function calcDeliveredDate() {
@@ -1105,9 +1118,12 @@
                 if (idx + 1 === tabNum) el.classList.remove('hidden');
                 else el.classList.add('hidden');
             });
+            const hideApprovalTab = currentUser && currentUser.role === 'Account Holder';
             document.querySelectorAll('nav button').forEach((btn, idx) => {
-                if (idx + 1 === tabNum) btn.className = "px-3 py-1.5 rounded bg-white text-black font-bold transition-colors";
-                else btn.className = "px-3 py-1.5 rounded text-zinc-400 hover:text-white font-bold transition-colors";
+                btn.className = (idx + 1 === tabNum)
+                    ? "px-3 py-1.5 rounded bg-white text-black font-bold transition-colors"
+                    : "px-3 py-1.5 rounded text-zinc-400 hover:text-white font-bold transition-colors";
+                if (idx === 3 && hideApprovalTab) btn.classList.add('hidden');
             });
 
             if (tabNum === 2) renderL2DR();
@@ -1682,20 +1698,6 @@
             html2pdf().set(opt).from(bundleContainer).save().then(() => {
                 bundleContainer.classList.add('hidden');
             });
-        }
-
-        function renderUserList() {
-            const list = document.getElementById('userAccountList');
-            if (!list) return;
-            list.innerHTML = users.map((u, idx) => `
-                <div class="flex justify-between items-center bg-black p-2.5 rounded-lg text-xs border border-zinc-800">
-                    <div class="flex flex-col">
-                        <span class="text-white font-bold">${u.username} <span class="text-amber-400 font-mono text-[10px]">(${u.role})</span></span>
-                        <span class="text-zinc-400 font-mono text-[10px] flex items-center gap-1"><i class="fa-solid fa-key text-[9px] text-emerald-400"></i> Password: <strong class="text-emerald-400">${u.pass}</strong></span>
-                    </div>
-                    ${u.username !== 'admin' ? `<button type="button" onclick="users.splice(${idx},1); localStorage.setItem('hhvi_users', JSON.stringify(users)); renderUserList();" class="text-rose-500 hover:text-rose-400 font-bold p-1"><i class="fa-solid fa-trash text-xs"></i></button>` : ''}
-                </div>
-            `).join('');
         }
     </script>
 </body>
